@@ -63,13 +63,16 @@ export async function supervise(options, {
         await event('previous-runtime-evidence-retained', { previousInstanceId: previous.instanceId, previousPid: previous.pid });
       }
     }
-  } catch (error) { await lease.release(); throw error; }
+  } catch (error) {
+    try { await lease.release(); } catch { /* retain the prior-receipt error */ }
+    throw error;
+  }
   signal?.addEventListener('abort', abort, { once: true });
   if (signal?.aborted) abort();
   const environment = childEnvironment(layout);
   environment.CODAS_WINDOWS_BACKEND_PORT = String(installed.backendPort);
   const workerArgs = ['--install-root', layout.installRoot, '--version-dir', layout.versionDir, '--manifest-sha256', layout.manifestSha256, '--state-dir', layout.stateDir];
-  let backend, agent, cleanShutdown = true, failed = null;
+  let backend, agent, cleanShutdown = true, failed = null, failureCause;
   let backendFailures = 0, agentFailures = 0, backendRetry = 0, agentRetry = 0, backendStarts = 0;
   let backendReady = false, healthFailures = 0, nextHealth = 0, nextReceipt = 0;
   let lastAgentStatus = '', lastBlockedHash = '';
@@ -207,8 +210,10 @@ export async function supervise(options, {
     }
   } catch (error) {
     if (!(controller.signal.aborted && error.code === 'STOP_REQUESTED')) {
+      failureCause = error;
       failed = safeFailure(error);
-      await event('supervisor-blocked', failed);
+      try { await event('supervisor-blocked', failed); }
+      catch { throw error; } // A diagnostic failure must not replace its cause.
     }
   } finally {
     abort();
@@ -216,10 +221,17 @@ export async function supervise(options, {
     const agentStopped = await stopChild(agent);
     const backendStopped = await stopChild(backend);
     cleanShutdown &&= agentStopped && backendStopped;
-    await publish('stopped', { cleanShutdown, failed, stoppedAt: new Date().toISOString() });
-    await event('supervisor-stop', { instanceId, cleanShutdown, failed });
-    await lease.release();
-    signal?.removeEventListener('abort', abort);
+    // Enter this cleanup only after the existing owned-child stop operations
+    // complete. A failed stopChild must not newly release a live owner's lease.
+    let cleanupError;
+    try {
+      await publish('stopped', { cleanShutdown, failed, stoppedAt: new Date().toISOString() });
+      await event('supervisor-stop', { instanceId, cleanShutdown, failed });
+    } catch (error) { cleanupError = error; }
+    try { await lease.release(); }
+    catch (error) { cleanupError ||= error; }
+    finally { signal?.removeEventListener('abort', abort); }
+    if (cleanupError) throw failureCause || cleanupError;
   }
   return { passed: !failed && cleanShutdown, cleanShutdown, failed, instanceId };
 }

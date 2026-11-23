@@ -6,6 +6,7 @@ import os from 'node:os';
 import net from 'node:net';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { getEventListeners } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { args, atomicJson, backoff, childEnvironment, digest, json, resolveLayout, safeFailure, verifyPayload, REQUIRED } from '../scripts/windows/stable/runtime/common.mjs';
 import { initializeState } from '../scripts/windows/stable/runtime/init-state.mjs';
@@ -13,6 +14,7 @@ import { control } from '../scripts/windows/stable/runtime/control.mjs';
 import { supervise } from '../scripts/windows/stable/runtime/supervisor.mjs';
 import { createLogger } from '../scripts/windows/stable/runtime/log.mjs';
 import { probe } from '../scripts/windows/stable/runtime/probe.mjs';
+import { acquireRuntimeLease } from '../scripts/windows/stable/runtime/lease.mjs';
 
 const runtime = fileURLToPath(new URL('../scripts/windows/stable/runtime/', import.meta.url));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -288,6 +290,41 @@ test('forced termination of an unresponsive owned child is recorded as incomplet
   const result = await running.promise;
   assert.equal(result.cleanShutdown, false); assert.equal(result.passed, false);
   assert.equal((await f.receipt()).cleanShutdown, false);
+});
+test('failed final receipt publication still releases the OS lease after owned children stop', async t => {
+  const f = await fixture(t), rename = fs.rename;
+  const receiptFile = path.join(f.layout.stateDir, 'supervisor.json');
+  const primary = Object.assign(new Error('fixture final receipt failure'), { code: 'EIO', syscall: 'rename' });
+  t.mock.method(fs, 'rename', async (source, destination) => {
+    if (destination === receiptFile && JSON.parse(await fs.readFile(source, 'utf8')).status === 'stopped') throw primary;
+    return rename(source, destination);
+  });
+  const running = run(t, f);
+  await until(async () => (await f.receipt())?.status === 'local-ready');
+  running.controller.abort();
+  await assert.rejects(running.promise, error => error === primary);
+  // Acquiring the actual OS lease proves that failed diagnostics did not leave
+  // the helper alive holding it. No process named in a receipt is killed here.
+  const lease = await acquireRuntimeLease(f.layout);
+  await lease.release();
+});
+test('failed shutdown logging preserves the first failure and releases the stopped runtime lease', async t => {
+  const f = await fixture(t);
+  const primary = Object.assign(new Error('fixture primary failure'), { code: 'EIO', syscall: 'read' });
+  const secondary = Object.assign(new Error('fixture diagnostic failure'), { code: 'ENOSPC', syscall: 'write' });
+  let backendWasReady = false;
+  const running = run(t, f, { onEvent: async type => {
+    if (type === 'backend-ready') { backendWasReady = true; throw primary; }
+    if (type === 'supervisor-blocked' || type === 'supervisor-stop') throw secondary;
+  } });
+  await assert.rejects(running.promise, error => error === primary);
+  assert.equal(backendWasReady, true);
+  const stopped = await f.receipt();
+  assert.equal(stopped.status, 'stopped'); assert.equal(stopped.cleanShutdown, true);
+  assert.deepEqual(stopped.failed, safeFailure(primary));
+  assert.equal(getEventListeners(running.controller.signal, 'abort').length, 0);
+  const lease = await acquireRuntimeLease(f.layout);
+  await lease.release();
 });
 test('runtime logs retain at most two bounded files', async t => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'codas-log-'));

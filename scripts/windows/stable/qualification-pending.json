@@ -148,8 +148,40 @@
         "pass": 17,
         "fail": 2
       },
-      "issue": "Intermittent initial-verification failure after an owned supervisor crash; actual OS cause still needs diagnosis."
+      "issue": "The intermittent initial-verification failure was reproduced on Windows CI as EPERM during atomic rename of the initial progress state; a bounded Windows replacement and cleanup fix awaits fresh native verification.",
+      "ciReproduction": {
+        "runId": 45114242905,
+        "node": "24.21.0",
+        "sourcePass": 144,
+        "sourceFail": 2,
+        "phase": "initial-verification-progress",
+        "verifiedFiles": 0,
+        "causeCode": "EPERM",
+        "syscall": "rename",
+        "externalCause": "not-established"
+      }
     },
-    "connection": "Codas device discovery and both device command routes currently return internal errors; no physical-PC sleep/offline cause inferred."
+    "connection": "Codas device discovery and both device command routes currently return internal errors; no physical-PC sleep/offline cause inferred.",
+    "candidateCI": {
+      "runId": 45112363505,
+      "sourceCommit": "d53073494906f0804a189b1a37ca1bf932ac982e",
+      "node22SourcePassed": 146,
+      "node24SourcePassed": 146,
+      "nativeInstallerFixturesPerNode": 40,
+      "node22RestartRoundsPassed": 5,
+      "stableQualification": false
+    },
+    "completePackageCI": {
+      "runId": 45113984293,
+      "overall": "failed",
+      "payloadFilesVerified": 38432,
+      "nativeModulesPassed": true,
+      "actualBackendPassed": true,
+      "localAuthenticatedHostnamePassed": true,
+      "stopResultPassed": true,
+      "exitObservation": "The harness-added parent IPC kept the finished supervisor alive; the same mechanism was reproduced independently. Corrected harness awaits a new full run.",
+      "physicalWindowsAcceptance": false,
+      "remoteAcceptance": false
+    }
   }
 }

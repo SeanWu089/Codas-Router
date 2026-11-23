@@ -1,12 +1,13 @@
 # Todos
 
-## 2026-11-23 — Confirmed Windows stable release
+## 2026-11-23 — Confirmed request for a Windows stable release
 
 - [x] Recover the latest active Windows session, verify the actual target and successful live hostname, identify the frozen `c1497ca` source, and preserve the running cumulative-awake test.
 - [x] Isolate `release/windows-stable-20261123` from the original working copies and preserve the exact frozen transport tree.
 - [x] Implement and review the offline package builder, strict payload validation, owned logon task, isolated persistent state, supervised startup and transactional rollback; full packaging roundtrip passed for 38,432 files.
 - [x] Verify installer fixtures under native Windows PowerShell 5.1: 40/40 passed with direct `-File` invocation; fixture success is distinct from full-package installation.
-- [ ] Resolve the actual Windows runtime rapid-restart/initial-verification failure. Latest suite: 17/19; allowlisted filesystem cause diagnostics are prepared but the Codas channel became unavailable before another run. Do not relabel the failure as a passed test.
+- [ ] Verify the Windows state-write fix against the reproduced `EPERM / rename` during initial verification. Preserve the physical 17/19 and CI reproduction as failure evidence; require fresh native tests for bounded atomic replacement and cleanup before marking the issue resolved.
+- [ ] Re-run the exact completed package with the corrected engineering harness. RC4's actual native modules, real backend and OAuth/MCP hostname passed, but its extra parent IPC caused the exit-observation failure; that run is not an overall pass.
 - [x] Apply the user's latest 2026-11-23 waiver: fixed 24h/8h duration is not a stable-release gate. Qualify the exact package by real Windows daily-use scenarios; retain the unchanged cumulative-awake run as supplementary evidence and record natural-wake/reboot coverage honestly.
 - [ ] Build a provenance-verified complete package; validate fresh isolated installation without package-registry access, fault recovery and rollback; prove actual plugin remote execution through an isolated installation and explicitly allowed test folder. Replacing the existing production identity is a separate migration step, not a prerequisite for publishing an independently qualified package.
 - [ ] Publish the stable release only when its qualification evidence and exact shipped source/dependencies agree. The user's current request authorizes publication; no further publication confirmation is required. A draft is not a released stable version.

@@ -49,18 +49,46 @@ export async function json(file, limit = 1024 * 1024) {
   try { return JSON.parse(await fs.readFile(file, 'utf8')); }
   catch (error) { if (error instanceof SyntaxError) throw new RuntimeFault('INVALID_JSON'); throw error; }
 }
+async function replaceJsonFile(temp, file) {
+  const deadline = performance.now() + 1500;
+  let firstError, pauseMs = 10;
+  for (let attempt = 0; ; attempt++) {
+    try { await fs.rename(temp, file); return; }
+    catch (error) {
+      if (process.platform !== 'win32' || !['EPERM', 'EACCES', 'EBUSY'].includes(error.code)) throw error;
+      firstError ||= error;
+      const remaining = deadline - performance.now();
+      if (remaining <= 0 || attempt >= 15) throw firstError;
+      // Keep the same flushed file and atomic replacement operation. A Windows
+      // sharing refusal can be brief; never remove the destination or change ACLs.
+      await delay(Math.min(pauseMs, remaining));
+      if (performance.now() >= deadline) throw firstError;
+      pauseMs = Math.min(200, pauseMs * 2);
+    }
+  }
+}
 export async function atomicJson(file, value, { exclusive = false } = {}) {
   await noLinks(path.dirname(file), { missing: true });
   await fs.mkdir(path.dirname(file), { recursive: true });
   await noLinks(file, { missing: true });
   const temp = `${file}.${process.pid}.${randomUUID()}.tmp`;
   const handle = await fs.open(temp, 'wx', 0o600);
-  try { await handle.writeFile(JSON.stringify(value, null, 2) + '\n'); await handle.sync(); }
-  finally { await handle.close(); }
   try {
+    let writeError;
+    try { await handle.writeFile(JSON.stringify(value, null, 2) + '\n'); await handle.sync(); }
+    catch (error) { writeError = error; throw error; }
+    finally {
+      try { await handle.close(); }
+      catch (error) { if (!writeError) throw error; }
+    }
     if (exclusive) { await fs.link(temp, file); await fs.unlink(temp); }
-    else await fs.rename(temp, file);
-  } catch (error) { await fs.rm(temp, { force: true }); throw error; }
+    else await replaceJsonFile(temp, file);
+  } catch (error) {
+    // Cleanup is best effort; retain the primary write/close/rename/link error.
+    // Never delete the destination, including after a permanent sharing refusal.
+    try { await fs.rm(temp, { force: true }); } catch { /* retain primary error */ }
+    throw error;
+  }
 }
 export async function digest(file) {
   const hash = createHash('sha256');
