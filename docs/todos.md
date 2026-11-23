@@ -1,5 +1,34 @@
 # Todos
 
+## 2026-11-23 — Confirmed Windows stable release
+
+- [x] Recover the latest active Windows session, verify the actual target and successful live hostname, identify the frozen `c1497ca` source, and preserve the running cumulative-awake test.
+- [x] Isolate `release/windows-stable-20261123` from the original working copies and preserve the exact frozen transport tree.
+- [x] Implement and review the offline package builder, strict payload validation, owned logon task, isolated persistent state, supervised startup and transactional rollback; full packaging roundtrip passed for 38,432 files.
+- [x] Verify installer fixtures under native Windows PowerShell 5.1: 40/40 passed with direct `-File` invocation; fixture success is distinct from full-package installation.
+- [ ] Resolve the actual Windows runtime rapid-restart/initial-verification failure. Latest suite: 17/19; allowlisted filesystem cause diagnostics are prepared but the Codas channel became unavailable before another run. Do not relabel the failure as a passed test.
+- [x] Apply the user's latest 2026-11-23 waiver: fixed 24h/8h duration is not a stable-release gate. Qualify the exact package by real Windows daily-use scenarios; retain the unchanged cumulative-awake run as supplementary evidence and record natural-wake/reboot coverage honestly.
+- [ ] Build a provenance-verified complete package; validate fresh isolated installation without package-registry access, fault recovery and rollback; prove actual plugin remote execution through an isolated installation and explicitly allowed test folder. Replacing the existing production identity is a separate migration step, not a prerequisite for publishing an independently qualified package.
+- [ ] Publish the stable release only when its qualification evidence and exact shipped source/dependencies agree. The user's current request authorizes publication; no further publication confirmation is required. A draft is not a released stable version.
+- [ ] Retire only separately verified obsolete owned tasks/files after accepted migration. Keep the currently shared dependency directory, private state, logs and rollback assets while referenced.
+
+### User acceptance — latest Windows client
+
+All items are pending for the new packaged version. Programmatic fixtures do not mark user acceptance passed; the recent successful legacy-bridge recovery is preserved as historical evidence.
+
+| ID | Steps / precondition | Expected result | Current status |
+| --- | --- | --- | --- |
+| WIN-S01 | Install the complete package into an isolated Windows user directory without global Node/npm or registry access | Backend authentication, workspace open and actual command work using bundled dependencies | Pending |
+| WIN-S02 | Start Codas; use a Codas plugin on another device to open the selected Windows working directory | New remote reads and commands return from the intended PC | Pending; old installed bridge restored separately |
+| WIN-S03 | Exercise delayed backend startup and owned child-process exit in an isolated installation | Recovery continues beyond three minutes; no re-pairing or expired/repeated operation | Pending |
+| WIN-S04 | Alter/remove a dependency in an isolated package copy | Integrity fails with evidence before an installed healthy version is replaced | Pending |
+| WIN-S05 | Exercise preparation and post-switch failure, plus a foreign same-name task fixture | No foreign task is overwritten; previous pointer/task restored; live state preserved | Pending |
+| WIN-S06 | Stop Codas, observe stopped intent, then explicitly start | Stop persists and explicit Start restores access with retained identity | Pending |
+| WIN-S07 | Register the owned current-user login task and exercise Start/Stop | Saved start intent honored; real full reboot/natural wake recorded separately | Pending; no forced sleep/reboot |
+| WIN-S08 | Observe the unchanged frozen candidate's accumulated awake time | Record actual duration, faults and stale execution; no fixed-duration release gate | Running supplementary observation |
+| WIN-S09 | Migrate the accepted package while retaining the previous version | Same identity/roots, verified remote command and available rollback | Pending |
+
+
 ## 2026-10-13 — Preview.3 readiness and optional file audit
 
 - [x] Implement and test controlled SSE reconnect backoff after sustained authenticated streams, retaining the free-ingress request budget and strict auth-failure behavior.

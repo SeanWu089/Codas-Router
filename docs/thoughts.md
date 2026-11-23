@@ -1,5 +1,8 @@
 # Thoughts
 
+- 2026-11-23 Windows release contract: after Windows login and enabling Codas, authenticated Codas plugins on other devices can work with explicitly allowed local folders through the existing HTTPS ingress. Decentralized/core takeover is deferred. Keep runtime dependencies self-contained in a durable user installation and identity, authorization and session-generation state outside immutable version directories.
+- 2026-11-23 latest release policy: fixed 24h/8h testing is not required by the user. Prefer directly observed daily-use acceptance of the actual package—fresh install, remote workspace execution, recovery, missing-file detection/repair and rollback. Keep long-duration, wake and full-reboot observations truthful and supplementary; never turn an unobserved scenario into a passed test.
+
 - 2026-10-13 confirmed constraint: treat the existing ngrok Free plan as the only available plan. Do not propose paid upgrades as the fix for wasteful background traffic. Prefer one authenticated SSE channel, changes/results on demand, budgeted positive heartbeats and bounded reconnects. Confirmed Windows development location is `C:\Users\ASUS\Desktop\PROJECTS\CodasSol-Router`.
 
 - Position CodasSol as a **transparent workspace router**, not as another general remote desktop or all-in-one AI runtime.

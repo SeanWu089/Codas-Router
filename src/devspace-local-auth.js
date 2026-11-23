@@ -24,7 +24,10 @@ async function responseJson(response, context) {
     parsed = null;
   }
   if (!response.ok || !parsed) {
-    throw new Error(`${context} failed with HTTP ${response.status}`);
+    throw Object.assign(new Error(`${context} failed with HTTP ${response.status}`), {
+      status: response.status,
+      oauthError: parsed?.error
+    });
   }
   return parsed;
 }
@@ -56,9 +59,13 @@ export class DevSpaceLocalOAuth {
       try {
         await this.#refresh();
         return this.oauthState.accessToken;
-      } catch {
+      } catch (error) {
+        // A timeout/disconnect does not revoke a refresh token. Preserve the
+        // complete saved grant so the next bounded job can retry refresh.
+        if (error.oauthError !== "invalid_grant") throw error;
         this.oauthState = {
           clientId: this.oauthState.clientId,
+          redirectUri: this.oauthState.redirectUri,
           resource: this.oauthState.resource
         };
         await this.saveOAuthState(this.oauthState);

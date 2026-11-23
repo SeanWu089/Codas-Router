@@ -15,7 +15,16 @@
 
 </div>
 
-> **Current codebase (2026-10-10):** The default branch includes the tested
+> **Windows release work (2026-11-23):** The current Windows release scope is a
+> reliable client: enable Codas on a logged-in Windows PC, then use Codas plugins
+> on other devices to work in its explicitly allowed folders through the existing
+> shared HTTPS ingress. Core takeover and decentralized ingress are deferred.
+> The frozen transport candidate is `c1497ca`; its cumulative-awake qualification
+> and the new offline, transactional installer remain separate release gates.
+> See [Codas Windows](scripts/windows/stable/README-WINDOWS.md). This release
+> branch is not yet a published stable installer.
+
+> **Historical integration checkpoint (2026-10-10):** The default branch includes the tested
 > **Device Registry v1**, **CodasSol-mac v0.3.2** menu-bar app, and Mac-side
 > workspace routing / wrong-device protections. These components were
 > verified on macOS. The cross-network, **Mac-offline Windows v0.2** goal is

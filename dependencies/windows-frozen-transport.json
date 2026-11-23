@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "bundleFile": "windows-frozen-transport.bundle",
+  "bundleSha256": "92daeff1621cfa639961864a75d4e230f4e50781d0550c5a680447a0f70f1c66",
+  "headRef": "refs/codas/frozen-windows-transport",
+  "headCommit": "c1497cac73c8d147dfcd74127018be470ae8a72a",
+  "headTree": "120b181e4a13069f1c40058cde139f6844504f29",
+  "prerequisiteCommit": "0961b97ed8d2393f0aab57aa38593dc9968553b3",
+  "commits": [
+    {
+      "commit": "f8b3130988bfb9fa44bd456db31954a3835ebcb6",
+      "parent": "0961b97ed8d2393f0aab57aa38593dc9968553b3",
+      "tree": "03faf388bca591bd2f18e1189e1f4d64c4a5fa92"
+    },
+    {
+      "commit": "c1497cac73c8d147dfcd74127018be470ae8a72a",
+      "parent": "f8b3130988bfb9fa44bd456db31954a3835ebcb6",
+      "tree": "120b181e4a13069f1c40058cde139f6844504f29"
+    }
+  ]
+}

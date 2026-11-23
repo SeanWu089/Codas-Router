@@ -1,0 +1,208 @@
+name: Windows candidate validation and draft
+
+on:
+  push:
+    branches:
+      - 'release/windows-stable-*'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/windows/stable/**'
+      - 'dependencies/**'
+      - 'test/windows-stable-*'
+      - '.github/workflows/windows-stable-validation.yml'
+      - '.github/scripts/windows-draft-release*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CANDIDATE_DIRECTORY: Codas-Windows-0.2.0-rc.4
+  CANDIDATE_VERSION: windows-0.2.0-rc.4-c1497ca
+
+jobs:
+  windows:
+    name: Windows / Node ${{ matrix.node }} / PowerShell 5.1
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22.23.3', '24.21.0']
+    steps:
+      - name: Preserve committed bytes on the ephemeral Windows runner
+        shell: powershell
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Restore the verified original transport Git objects
+        run: node scripts/windows/stable/restore-frozen-source.mjs
+      - name: Source and release behavior tests
+        run: node --test
+      - name: Draft publication refusal and idempotency tests
+        run: node --test .github/scripts/windows-draft-release.test.mjs
+      - name: Parse installer scripts with Windows PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(Get-ChildItem scripts/windows/stable,test -Filter '*.ps1' -Recurse | Where-Object {
+            $_.FullName -like '*scripts\windows\stable\*' -or $_.Name -like 'windows-stable-*'
+          })
+          if ($files.Count -eq 0) { throw 'Release PowerShell scripts are missing.' }
+          foreach ($file in $files) {
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -gt 0) { throw ($file.Name + ': ' + ($parseErrors -join '; ')) }
+          }
+          Write-Host ('Parsed ' + $files.Count + ' files using ' + $PSVersionTable.PSVersion)
+      - name: Native installer transaction fixtures
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tests = @(Get-ChildItem test -Filter 'windows-stable-*.ps1' -File)
+          if ($tests.Count -eq 0) { throw 'Native installer fixtures are missing.' }
+          $nativePowerShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+          foreach ($test in $tests) {
+            & $nativePowerShell -NoLogo -NoProfile -File $test.FullName
+            if ($LASTEXITCODE -ne 0) { throw ('Native fixture failed: ' + $test.Name) }
+          }
+
+  package:
+    name: Build complete offline candidate
+    needs: windows
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      startsWith(github.ref, 'refs/heads/release/windows-stable-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      artifact_id: ${{ steps.candidate_artifact.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.3'
+      - name: Restore the verified original transport Git objects
+        run: node scripts/windows/stable/restore-frozen-source.mjs
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/codas-windows-archives
+          key: codas-windows-archives-${{ hashFiles('dependencies/windows-runtime-pins.json', 'dependencies/windows-devspace-package-lock.json', 'dependencies/npm-integrity-supplement.json') }}
+      - name: Fetch and verify locked upstream archives
+        shell: bash
+        run: |
+          node scripts/windows/stable/build-package.mjs --prepare-dependencies --official-only \
+            --cache "$RUNNER_TEMP/codas-windows-archives"
+      - name: Assemble from the verified archive cache without downloads
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/codas-windows-dist"
+          node scripts/windows/stable/build-package.mjs --candidate --offline \
+            --version "$CANDIDATE_VERSION" --cache "$RUNNER_TEMP/codas-windows-archives" \
+            --output "$RUNNER_TEMP/codas-windows-package/$CANDIDATE_DIRECTORY"
+      - name: Archive the short outer package tree reproducibly
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, stat, subprocess, time, zipfile
+          name = os.environ['CANDIDATE_DIRECTORY']
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'codas-windows-package' / name
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'codas-windows-dist' / (name + '.zip')
+          if (root / 'payload').exists() or not (root / 'payload.codas').is_file():
+              raise SystemExit('Expected the compact offline package, without an unpacked payload tree.')
+          epoch = int(subprocess.check_output(['git', 'show', '-s', '--format=%ct', os.environ['GITHUB_SHA']], text=True))
+          date = time.gmtime(max(epoch, 315532800))[:6]
+          members = []
+          with zipfile.ZipFile(target, 'x', compression=zipfile.ZIP_DEFLATED, compresslevel=6, allowZip64=True) as archive:
+              for source in sorted(root.rglob('*')):
+                  if source.is_symlink():
+                      raise SystemExit('Package contains a symbolic link.')
+                  if source.is_dir():
+                      continue
+                  if not source.is_file():
+                      raise SystemExit('Package contains a non-regular file.')
+                  member = name + '/' + source.relative_to(root).as_posix()
+                  if len(member) > 180:
+                      raise SystemExit('Outer package tree is unexpectedly deep.')
+                  info = zipfile.ZipInfo(member, date)
+                  info.create_system = 3
+                  info.external_attr = (stat.S_IFREG | 0o644) << 16
+                  info.compress_type = zipfile.ZIP_DEFLATED
+                  with source.open('rb') as incoming, archive.open(info, 'w', force_zip64=True) as outgoing:
+                      while chunk := incoming.read(1024 * 1024):
+                          outgoing.write(chunk)
+                  members.append(member)
+          with zipfile.ZipFile(target) as archive:
+              if archive.namelist() != members or archive.testzip() is not None:
+                  raise SystemExit('ZIP round-trip verification failed.')
+          print(f'ZIP verified: {len(members)} outer files; runtime remains a candidate.')
+          PY
+      - name: Pin candidate metadata and SHA-256 checksums
+        shell: bash
+        run: |
+          node .github/scripts/windows-draft-release.mjs prepare \
+            --package-root "$RUNNER_TEMP/codas-windows-package/$CANDIDATE_DIRECTORY" \
+            --dist "$RUNNER_TEMP/codas-windows-dist" --sha "$GITHUB_SHA" --repository "$GITHUB_REPOSITORY"
+      - name: Preserve the candidate before attempting any release mutation
+        id: candidate_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Codas-Windows-0.2.0-rc.4-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/codas-windows-dist/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+  draft:
+    name: Attach candidate to an unpublished draft only
+    needs: package
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      startsWith(github.ref, 'refs/heads/release/windows-stable-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    concurrency:
+      group: codas-windows-draft-windows-v0.2.0-rc.4
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.3'
+      - uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.package.outputs.artifact_id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/codas-windows-dist
+      - name: Create or reuse the exact-commit draft without replacing assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          node .github/scripts/windows-draft-release.mjs publish \
+            --dist "$RUNNER_TEMP/codas-windows-dist" --sha "$GITHUB_SHA" --repository "$GITHUB_REPOSITORY"
+
+# Push reads the workflow from the pushed ref, including before it reaches main:
+# https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push
+# workflow_dispatch requires the workflow on the default branch. The release API
+# may require workflow-write authority for a target that changes workflow files;
+# GITHUB_TOKEN cannot acquire that permission. A maintainer may pre-create the
+# same exact-SHA draft; CI never broadens permissions or publishes a release.
+# https://docs.github.com/en/rest/releases/releases#create-a-release
+# CI does not replace agreed physical-PC usage-scenario acceptance. Extended
+# soak, natural wake, and full reboot remain supplementary, unclaimed observations.

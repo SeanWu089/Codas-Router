@@ -11,7 +11,8 @@ import { startRouter } from "../src/server.js";
 
 async function tmp(t) {
   const dir = await mkdtemp(path.join(os.tmpdir(), "codassol-catalog-"));
-  t.after(() => rm(dir, { recursive: true, force: true }));
+  // Windows may briefly retain a handle after an awaited atomic file rename.
+  t.after(() => rm(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
   return dir;
 }
 
@@ -27,8 +28,8 @@ test("Device Catalog persists a renamed identity, without changing its route key
   assert.equal(b.get("windows-01").id, before.id);
   assert.equal(b.get("windows-01").platform, "win32");
   assert.equal(await b.rename("not-registered", "Unknown"), null);
-  assert.rejects(() => b.rename("windows-01", "  \n  "), /printable/);
-  assert.rejects(() => b.observe({ id: "windows-01", defaultName: "Mac?", platform: "darwin" }), /DEVICE_ID_COLLISION/);
+  await assert.rejects(() => b.rename("windows-01", "  \n  "), /printable/);
+  await assert.rejects(() => b.observe({ id: "windows-01", defaultName: "Mac?", platform: "darwin" }), /DEVICE_ID_COLLISION/);
 });
 
 test("concurrent offline rename conflict converges independent of merge order", async (t) => {

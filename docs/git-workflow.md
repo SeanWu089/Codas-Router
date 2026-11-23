@@ -1,5 +1,10 @@
 # Git workflow and Worktree responsibilities
 
+## Windows release branch — 2026-11-23
+
+`release/windows-stable-20261123` contains the exact frozen Windows transport candidate `c1497ca` and isolated release-engineering changes. The original Windows and Mac working copies, their uncommitted changes and the active stability test are preserved. This branch targets the Windows client through the existing ingress; decentralized/core takeover is deferred. The user's latest instruction waives a fixed 24h/8h duration; packaged daily-use acceptance remains required. A source push or draft release does not install the candidate or prove those scenarios. Keep existing public tags/assets immutable; publish a new qualified release only after the checks in `scripts/windows/stable/README-WINDOWS.md` pass.
+
+
 Status reviewed on 2026-10-10; verify with `git branch -avv` and `git worktree list` before changing anything.
 
 ## Long-lived branches

@@ -124,3 +124,66 @@ test("local DevSpace OAuth uses PKCE and keeps authorization local", async () =>
   }
 });
 
+test("a cancelled OAuth refresh preserves the grant and the next request recovers", async () => {
+  const grant = {
+    clientId: "test-client", refreshToken: "test-refresh", accessExpiresAt: 0,
+    redirectUri: "http://127.0.0.1:17677/callback", resource: "http://127.0.0.1/mcp"
+  };
+  let saved = structuredClone(grant), fail = true;
+  const requests = [];
+  const oauth = new DevSpaceLocalOAuth({
+    baseUrl: "http://127.0.0.1", oauthState: grant,
+    saveOAuthState: async state => { saved = structuredClone(state); },
+    fetchFn: async (url, options) => {
+      requests.push(url.pathname);
+      if (url.pathname === "/token") {
+        assert.equal(new URLSearchParams(options.body).get("refresh_token"), "test-refresh");
+        if (fail) throw new DOMException("job deadline", "AbortError");
+        return Response.json({ access_token: "fresh-access", expires_in: 3600 });
+      }
+      assert.equal(url.pathname, "/mcp");
+      assert.equal(options.headers.get("authorization"), "Bearer fresh-access");
+      return Response.json({ ok: true });
+    }
+  });
+  await assert.rejects(oauth.authorizedFetch("/mcp"), { name: "AbortError" });
+  assert.deepEqual(saved, grant);
+  fail = false;
+  assert.equal((await oauth.authorizedFetch("/mcp")).status, 200);
+  assert.equal(saved.refreshToken, "test-refresh");
+  assert.equal(saved.redirectUri, grant.redirectUri);
+  assert.deepEqual(requests, ["/token", "/token", "/mcp"]);
+});
+
+test("an explicitly revoked refresh grant reauthorizes with its registered redirect URI", async t => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "codassol-oauth-recovery-"));
+  t.after(() => rm(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+  const ownerTokenPath = path.join(directory, "auth.json");
+  await writeFile(ownerTokenPath, JSON.stringify({ ownerToken: "test-owner" }));
+  const redirectUri = "http://127.0.0.1:17677/callback";
+  let authorizationCount = 0;
+  const oauth = new DevSpaceLocalOAuth({
+    baseUrl: "http://127.0.0.1", ownerTokenPath,
+    oauthState: { clientId: "test-client", redirectUri, refreshToken: "revoked", resource: "http://127.0.0.1/mcp" },
+    fetchFn: async (url, options) => {
+      const body = new URLSearchParams(options.body);
+      if (url.pathname === "/token" && body.get("grant_type") === "refresh_token") {
+        return Response.json({ error: "invalid_grant" }, { status: 400 });
+      }
+      if (url.pathname === "/authorize") {
+        authorizationCount++;
+        assert.equal(body.get("redirect_uri"), redirectUri);
+        const redirect = new URL(redirectUri);
+        redirect.searchParams.set("state", body.get("state"));
+        redirect.searchParams.set("code", "new-code");
+        return new Response(null, { status: 302, headers: { location: redirect.href } });
+      }
+      assert.equal(url.pathname, "/token");
+      assert.equal(body.get("redirect_uri"), redirectUri);
+      return Response.json({ access_token: "new-access", refresh_token: "new-refresh", expires_in: 3600 });
+    }
+  });
+  assert.equal(await oauth.accessToken(), "new-access");
+  assert.equal(authorizationCount, 1);
+});
+

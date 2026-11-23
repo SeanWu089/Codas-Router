@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "product": "Codas Windows",
+  "releaseStatus": "qualification-in-progress",
+  "stable": false,
+  "transportRevision": "c1497cac73c8d147dfcd74127018be470ae8a72a",
+  "scope": "Windows user enables Codas; authenticated Codas plugins on other devices access the explicitly allowed Windows working folders through the existing shared HTTPS ingress.",
+  "deferred": [
+    "Decentralized coordination",
+    "Public ingress/core takeover"
+  ],
+  "regression": {
+    "node22": {
+      "skip": 0,
+      "fail": 0,
+      "pass": 109
+    },
+    "node24": {
+      "skip": 0,
+      "fail": 0,
+      "pass": 109
+    }
+  },
+  "sourcePlatform": "Windows x64",
+  "reconnect": {
+    "status": "passed",
+    "sourceRevision": "c1497cac73c8d147dfcd74127018be470ae8a72a",
+    "sourceClean": true,
+    "updatedAt": "2026-11-19T08:08:22.395Z",
+    "roundsCompleted": 20,
+    "recoveryMs": [
+      2742,
+      3139,
+      3232,
+      3846,
+      3977,
+      3004,
+      4665,
+      2530,
+      2065,
+      3768,
+      3576,
+      3680,
+      4298,
+      3823,
+      4028,
+      2872,
+      2222,
+      3365,
+      4919,
+      3034
+    ],
+    "unexpectedErrors": 0,
+    "commandFailures": 0,
+    "commandSuccesses": 21,
+    "manualInterventions": 0,
+    "staleMutationsExecuted": 0,
+    "staleMutationsAttempted": 20,
+    "maxAdmittedSseConsumers": 1,
+    "cleanupComplete": true
+  },
+  "blackhole": {
+    "status": "passed",
+    "sourceRevision": "c1497cac73c8d147dfcd74127018be470ae8a72a",
+    "sourceClean": true,
+    "updatedAt": "2026-11-19T08:09:00.938Z",
+    "roundsCompleted": 2,
+    "recoveryMs": [
+      545,
+      548
+    ],
+    "unexpectedErrors": 0,
+    "commandFailures": 0,
+    "commandSuccesses": 3,
+    "manualInterventions": 0,
+    "staleMutationsExecuted": 0,
+    "staleMutationsAttempted": 2,
+    "maxAdmittedSseConsumers": 1,
+    "cleanupComplete": true
+  },
+  "awakeSoak": {
+    "status": "running",
+    "sourceRevision": "c1497cac73c8d147dfcd74127018be470ae8a72a",
+    "sourceClean": true,
+    "updatedAt": "2026-11-23T03:21:13.037Z",
+    "roundsCompleted": 0,
+    "recoveryMs": [],
+    "unexpectedErrors": 0,
+    "commandFailures": 0,
+    "commandSuccesses": 2,
+    "manualInterventions": 0,
+    "staleMutationsExecuted": 0,
+    "staleMutationsAttempted": 1,
+    "maxAdmittedSseConsumers": 1,
+    "cleanupComplete": false,
+    "measurementKind": "cumulative_awake",
+    "cumulativeAwakeMs": 10509644,
+    "cumulativeIdleAwakeMs": 10509644,
+    "requiredAwakeMs": 86400000,
+    "requiredIdleAwakeMs": 28800000,
+    "confirmedSleepMs": 0,
+    "sleepWindows": 0,
+    "resumeRecoveries": [],
+    "remainingAwakeMs": 75890356,
+    "completed": false
+  },
+  "installedAcceptance": {
+    "freshOfflineInstall": false,
+    "fullPayloadProvenance": false,
+    "dependencyLossDetection": false,
+    "delayedBackendRecovery": false,
+    "upgradeRollback": false,
+    "authorizedRemoteExecution": false,
+    "logonStartup": false,
+    "wholePcReboot": false
+  },
+  "notes": [
+    "This sanitized snapshot is evidence of work in progress, not a successful release qualification.",
+    "The currently restored production connection still uses the previous installed bridge; it is not the frozen candidate's migration result.",
+    "Sleep is allowed and excluded. No power plan or whole-machine network change is required.",
+    "Whole-PC reboot, natural wake and installed package checks remain separately tracked.",
+    "The duration-configured awake run is supplementary observation, not a mandatory release-duration gate under the latest user instruction."
+  ],
+  "releasePolicy": {
+    "id": "windows-daily-use",
+    "authorizedOn": "2026-11-23",
+    "fixedDurationRequired": false,
+    "reason": "User explicitly waived a mandatory 24-hour run; actual Windows usage scenarios remain release gates."
+  },
+  "releaseEngineering": {
+    "nativeInstallerFixtures": {
+      "platform": "physical Windows",
+      "powerShell": "5.1.26100.1301",
+      "pass": 40,
+      "fail": 0,
+      "invocation": "powershell.exe -NoProfile -File",
+      "fullPackageAcceptance": false
+    },
+    "scopedChecks": {
+      "platform": "Linux",
+      "node": "22.23.3",
+      "pass": 46,
+      "fail": 0
+    },
+    "nativeRuntime": {
+      "status": "blocked",
+      "lastCompleteSuite": {
+        "pass": 17,
+        "fail": 2
+      },
+      "issue": "Intermittent initial-verification failure after an owned supervisor crash; actual OS cause still needs diagnosis."
+    },
+    "connection": "Codas device discovery and both device command routes currently return internal errors; no physical-PC sleep/offline cause inferred."
+  }
+}

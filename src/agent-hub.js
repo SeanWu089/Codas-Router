@@ -101,7 +101,8 @@ export class AgentHub {
     });
   }
 
-  async poll(deviceId, { timeoutMs = 25_000 } = {}) {
+  async poll(deviceId, { timeoutMs = 25_000, signal } = {}) {
+    if (signal?.aborted) return null;
     if (this.#streams.has(deviceId) || this.#waiters.has(deviceId)) {
       throw Object.assign(new Error("Agent already has a task consumer"), {
         code: "AGENT_CONSUMER_ACTIVE"
@@ -115,16 +116,19 @@ export class AgentHub {
     }
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
-        if (this.#waiters.get(deviceId) === finish) {
-          this.#waiters.delete(deviceId);
-        }
-        resolve(null);
+        finish(null);
       }, timeoutMs);
       const finish = (job) => {
         clearTimeout(timer);
+        signal?.removeEventListener("abort", cancel);
+        if (this.#waiters.get(deviceId) === finish) {
+          this.#waiters.delete(deviceId);
+        }
         resolve(job);
       };
+      const cancel = () => finish(null);
       this.#waiters.set(deviceId, finish);
+      signal?.addEventListener("abort", cancel, { once: true });
     });
   }
 

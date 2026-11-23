@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "target": {
+    "platform": "win32",
+    "architecture": "x64",
+    "nodeAbi": "127"
+  },
+  "transportRevision": "c1497cac73c8d147dfcd74127018be470ae8a72a",
+  "lockSha256": "364c3e618a66c84d70cd871bdb82ea044cae94cb80123ebf4c2ba01a765c4b74",
+  "node": {
+    "version": "22.23.3",
+    "archiveUrl": "https://nodejs.org/dist/v22.23.3/node-v22.23.3-win-x64.zip",
+    "archiveSha256": "2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71",
+    "checksumsUrl": "https://nodejs.org/dist/v22.23.3/SHASUMS256.txt",
+    "executableSha256": "9c9245166b4a8e182e0b797da9c20136117ff24368eaff1fec8343a123c8db0e",
+    "licenseSha256": "8cc9bb466b19fc7e7cc99d03e9df1132021fda8b01eea2624c58bb372dbef576"
+  },
+  "devspace": {
+    "version": "1.1.0-beta.4",
+    "integrity": "sha512-Tk6xCm53qRjWsrEgZkNxZZSl+Vq5hnlyC7q0AhdSgWsZTjMcCg3n1Zpu97hn0qUYQ7KsH5CCrE56lKXaE/ajKA==",
+    "cliSha256": "6028e1940c3fb728b270cb384f4f617b50fbf60e87783cf0c971d97b15c02ff5"
+  },
+  "betterSqlite3": {
+    "version": "12.11.1",
+    "archiveUrl": "https://github.com/WiseLibs/better-sqlite3/releases/download/v12.11.1/better-sqlite3-v12.11.1-node-v127-win32-x64.tar.gz",
+    "archiveSha256": "927b34496e946dc7c9a45636a03a039df72f10191ccc4960b8616d1a9319e45b",
+    "binaryPath": "build/Release/better_sqlite3.node",
+    "binarySha256": "c4b95a94a963258a9ef41b12fd3bb86f0b08a2ac5c5b499fe94de57a5443682d"
+  },
+  "lifecyclePolicy": "No npm lifecycle scripts execute during packaging. Native artifacts are included only from exact pinned upstream archive bytes; Windows runtime/native qualification is a separate required gate."
+}

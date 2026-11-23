@@ -519,15 +519,18 @@ async function handleAgentRoute(req, res, runtime) {
 
   if (req.url === "/_codassol/agent/poll" && req.method === "POST") {
     ensureRegisteredDevice(runtime, identity);
-    let job;
+    const controller = new AbortController();
+    const disconnected = () => controller.abort();
+    res.once("close", disconnected);
     try {
-      job = await runtime.agentHub.poll(identity.id);
+      const job = await runtime.agentHub.poll(identity.id, { signal: controller.signal });
+      if (!res.destroyed) sendJson(res, 200, { ok: true, job });
     } catch (error) {
       if (error.code !== "AGENT_CONSUMER_ACTIVE") throw error;
-      sendJson(res, 409, { error: "agent_consumer_active" });
-      return true;
+      if (!res.destroyed) sendJson(res, 409, { error: "agent_consumer_active" });
+    } finally {
+      res.removeListener("close", disconnected);
     }
-    sendJson(res, 200, { ok: true, job });
     return true;
   }
 
