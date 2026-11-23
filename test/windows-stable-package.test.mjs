@@ -170,8 +170,24 @@ test('daily-use stable gate rejects wrong policy, missing actual Windows gates, 
 });
 
 function fixture(t) {
-  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'codas-package-fixture-'));
+  // Windows runners may expose a DOS short-name alias through os.tmpdir().
+  // Use the actual directory for ordinary fixtures; redirected-path rejection
+  // remains the extractor's responsibility and is not relaxed for tests.
+  const requestedTemporaryBase = os.tmpdir();
+  const canonicalTemporaryBase = fs.realpathSync.native(requestedTemporaryBase);
+  const temporary = fs.mkdtempSync(path.join(canonicalTemporaryBase, 'codas-package-fixture-'));
   t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
+  if (process.platform === 'win32') {
+    const comparable = value => path.resolve(value.replace(/^\\\\\?\\/, '')).toLowerCase();
+    const fixturePathIsCanonical = comparable(temporary) === comparable(fs.realpathSync.native(temporary));
+    t.diagnostic(JSON.stringify({
+      fixture: 'package-temporary-directory',
+      temporaryBaseHasShortNameSyntax: /~[0-9]+(?:[\\/]|$)/.test(requestedTemporaryBase),
+      temporaryBaseIsAlias: comparable(requestedTemporaryBase) !== comparable(canonicalTemporaryBase),
+      fixturePathIsCanonical,
+    }));
+    assert.equal(fixturePathIsCanonical, true, 'The ordinary packaging fixture must use a canonical temporary directory');
+  }
   const root = path.join(temporary, 'source'), cache = path.join(temporary, 'cache');
   fs.mkdirSync(path.join(root, 'dependencies'), { recursive: true });
   const gitDir = execFileSync('git', ['rev-parse', '--absolute-git-dir'], { cwd: repositoryRoot, encoding: 'utf8' }).trim();

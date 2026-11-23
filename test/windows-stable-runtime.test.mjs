@@ -391,11 +391,34 @@ test('stale receipt PID reuse never kills a foreign live process or blocks a fre
 test('corrupt prior receipt is preserved and rejection releases the new OS lease', async t => {
   const f = await fixture(t);
   const receipt = path.join(f.layout.stateDir, 'supervisor.json');
-  await fs.writeFile(receipt, '{broken');
-  await assert.rejects(supervise(f.options), /INVALID_JSON/);
-  assert.equal(await fs.readFile(receipt, 'utf8'), '{broken');
-  await fs.unlink(receipt); // Explicit fixture operator repair, not runtime recovery.
-  const running = run(t, f);
-  await until(async () => (await f.receipt())?.status === 'local-ready');
-  running.controller.abort(); assert.equal((await running.promise).passed, true);
+  let phase = 'seed-corrupt-receipt', settlement = null;
+  try {
+    await fs.writeFile(receipt, '{broken');
+    phase = 'corrupt-receipt-rejection';
+    await assert.rejects(supervise(f.options), /INVALID_JSON/);
+    phase = 'corrupt-receipt-preserved';
+    assert.equal(await fs.readFile(receipt, 'utf8'), '{broken');
+    phase = 'operator-repair';
+    await fs.unlink(receipt); // Explicit fixture operator repair, not runtime recovery.
+    phase = 'second-start';
+    const running = run(t, f);
+    // Observe an early return/rejection immediately instead of reporting only
+    // a later readiness timeout. The original promise remains the stop assertion.
+    running.promise.then(
+      result => { settlement = { status: 'returned', result }; },
+      error => { settlement = { status: 'rejected', failure: safeFailure(error) }; }
+    );
+    await until(async () => {
+      if (settlement) throw new Error('Fixture supervisor ended before readiness');
+      return (await f.receipt())?.status === 'local-ready';
+    });
+    phase = 'second-stop';
+    running.controller.abort(); assert.equal((await running.promise).passed, true);
+  } catch (error) {
+    t.diagnostic(JSON.stringify({ phase, supervisor: settlement,
+      receipt: await f.receipt().catch(failure => ({ readError: safeFailure(failure) })),
+      events: await fs.readFile(path.join(f.root, 'logs', 'runtime.jsonl'), 'utf8').then(value => value.slice(-6000), failure => ({ readError: safeFailure(failure) }))
+    }).slice(-20000));
+    throw error;
+  }
 });

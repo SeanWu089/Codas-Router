@@ -8,7 +8,21 @@ $installer = Join-Path $RepositoryRoot 'scripts/windows/stable/installer'
 . (Join-Path $installer 'TaskOperations.ps1')
 . (Join-Path $installer 'Recovery.ps1')
 $script:passed = 0
-$temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) ('codas-installer-fixtures-' + [guid]::NewGuid().ToString('N'))
+# Windows TEMP may contain an 8.3 alias such as RUNNER~1. Resolve the existing
+# parent before creating fixtures; product verification still rejects aliases.
+# Use a script file so Windows PowerShell 5.1 never serializes JavaScript quotes.
+$tempResolver = Join-Path ([IO.Path]::GetTempPath()) ('codas-fixture-temp-' + [guid]::NewGuid().ToString('N') + '.cjs')
+try {
+    [IO.File]::WriteAllText($tempResolver, 'const fs=require("node:fs"),os=require("node:os");process.stdout.write(JSON.stringify(fs.realpathSync.native(os.tmpdir())));', (New-Object Text.UTF8Encoding($false)))
+    $resolvedTemp = @(& $NodeExecutable $tempResolver)
+    if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the existing temporary directory.' }
+    $temporaryParent = ($resolvedTemp -join "`n") | ConvertFrom-Json -ErrorAction Stop
+    if ($temporaryParent -isnot [string] -or -not [IO.Path]::IsPathRooted($temporaryParent) -or
+        -not [IO.Directory]::Exists($temporaryParent)) { throw 'Resolved temporary parent is not an existing absolute directory.' }
+} finally {
+    if (Test-Path -LiteralPath $tempResolver) { Remove-Item -LiteralPath $tempResolver -Force -ErrorAction Stop }
+}
+$temporaryRoot = Join-Path $temporaryParent ('codas-installer-fixtures-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $temporaryRoot -ErrorAction Stop | Out-Null
 
 function Assert-Fixture([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
@@ -410,7 +424,7 @@ try {
     # Only the random directory created by this process is removed.
     Assert-CodasNoReparse $temporaryRoot
     if (Test-Path -LiteralPath $temporaryRoot) {
-        $nodeFixture = New-FixtureNodeScript 'cleanup' 'const fs=require("node:fs"),p=require("node:path"),os=require("node:os");const r=p.resolve(process.argv[2]);if(!/^codas-installer-fixtures-[a-f0-9]{32}$/.test(p.basename(r))||p.dirname(r).toLowerCase()!==p.resolve(os.tmpdir()).toLowerCase())throw Error("cleanup root mismatch");fs.rmSync(r,{recursive:true,force:true});'
+        $nodeFixture = New-FixtureNodeScript 'cleanup' 'const fs=require("node:fs"),p=require("node:path"),os=require("node:os");const r=p.resolve(process.argv[2]);if(!/^codas-installer-fixtures-[a-f0-9]{32}$/.test(p.basename(r))||p.dirname(r).toLowerCase()!==fs.realpathSync.native(os.tmpdir()).toLowerCase())throw Error("cleanup root mismatch");fs.rmSync(r,{recursive:true,force:true});'
         & $NodeExecutable $nodeFixture $temporaryRoot
         if ($LASTEXITCODE -ne 0) { throw 'Could not remove the isolated installer fixture directory.' }
     }

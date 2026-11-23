@@ -25,6 +25,7 @@ jobs:
   windows:
     name: Windows / Node ${{ matrix.node }} / PowerShell 5.1
     runs-on: windows-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -43,7 +44,17 @@ jobs:
       - name: Restore the verified original transport Git objects
         run: node scripts/windows/stable/restore-frozen-source.mjs
       - name: Source and release behavior tests
-        run: node --test
+        run: node --test --test-reporter=tap
+      - name: Reproduce the outstanding physical-PC restart failure with bounded native repeats
+        if: matrix.node == '22.23.3'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          for ($attempt = 1; $attempt -le 5; $attempt++) {
+            Write-Host ('Native restart diagnostic attempt ' + $attempt + '/5')
+            node --test --test-reporter=tap --test-timeout=60000 --test-name-pattern='real supervisor crash|corrupt prior receipt' test/windows-stable-runtime.test.mjs
+            if ($LASTEXITCODE -ne 0) { throw ('Native restart diagnostic failed on attempt ' + $attempt) }
+          }
       - name: Draft publication refusal and idempotency tests
         run: node --test .github/scripts/windows-draft-release.test.mjs
       - name: Parse installer scripts with Windows PowerShell
