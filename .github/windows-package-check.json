@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "repository": "SeanWu089/Codas-Router",
+  "repositoryId": 1381092909,
+  "sourceCommit": "a9c8e888b3c82491e892b7d428f05660ae4717e4",
+  "candidateRunId": 45115505375,
+  "candidateRunAttempt": 1,
+  "candidateArtifactId": 14791501882,
+  "artifactName": "Codas-Windows-0.2.0-rc.5-a9c8e888b3c82491e892b7d428f05660ae4717e4-1",
+  "artifactSize": 242500804,
+  "artifactDigest": "sha256:90aaa997819f4038ca11e8c0621bf9c72581a7b174415326058921fa8d7e180b",
+  "zipSize": 233878024,
+  "zipSha256": "f585fbecfc14462e6abba27c8d61d8e71d5564458bf2582227cd9978979d2ed6",
+  "manifestSha256": "6e2a0b69c6966895e9ec61fa351fde1aa1cb7a092717d73403103ca3afa26dbd"
+}
