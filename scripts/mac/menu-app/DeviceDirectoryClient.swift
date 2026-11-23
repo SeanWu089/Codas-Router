@@ -48,17 +48,17 @@ struct DeviceInfo: Decodable, Identifiable {
     var backendTitle: String {
         if kind == "agent" { return "Unverified (heartbeat only)" }
         switch backendReachable {
-        case true: return "Reachable (not execution proof)"
-        case false: return "Unreachable"
-        case nil: return "Not checked"
+        case .some(true): return "Reachable (not execution proof)"
+        case .some(false): return "Unreachable"
+        case .none: return "Not checked"
         }
     }
 
     var executionTitle: String {
         switch executionVerified {
-        case true: return "Verified"
-        case false: return "Failed"
-        case nil: return "Not verified"
+        case .some(true): return "Verified"
+        case .some(false): return "Failed"
+        case .none: return "Not verified"
         }
     }
 
