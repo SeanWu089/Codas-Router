@@ -68,7 +68,7 @@ node scripts/windows/stable/build-package.mjs --prepare-dependencies \
 
 node scripts/windows/stable/build-package.mjs --candidate \
   --cache ../windows-release-cache --offline \
-  --output ../Codas-win-rc4
+  --output ../Codas-win-rc5
 ```
 
 The cache is addressed by digest; a corrupt cache entry fails closed. The normal

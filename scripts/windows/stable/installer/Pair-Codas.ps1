@@ -10,7 +10,7 @@ if ([string]::IsNullOrWhiteSpace($Router)) { $Router = Read-Host 'Enter the inte
 $uri = $null
 if (-not [Uri]::TryCreate($Router, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne 'https' -or
     $uri.UserInfo -or $uri.Query -or $uri.Fragment -or $uri.AbsolutePath -ne '/') { throw 'Use an HTTPS ingress origin without credentials, path, query, or fragment.' }
-$secret = Read-Host 'Enter the one-time pairing token (hidden)' -AsSecureString
+$secret = Read-Host 'Enter the pairing token (hidden)' -AsSecureString
 if ($secret.Length -eq 0) { throw 'Pairing cancelled: token is empty.' }
 $node = Join-Path $version 'payload/node/node.exe'
 $pair = Join-Path $version 'payload/runtime/pair.mjs'

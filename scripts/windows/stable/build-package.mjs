@@ -14,7 +14,7 @@ import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
 export const TRANSPORT_REVISION = 'c1497cac73c8d147dfcd74127018be470ae8a72a';
-export const DEFAULT_VERSION = 'windows-0.2.0-rc.4-c1497ca';
+export const DEFAULT_VERSION = 'windows-0.2.0-rc.5-c1497ca';
 const scriptRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptRoot, '../../..');
 const MAX_ARCHIVE_BYTES = 1024 * 1024 * 1024;

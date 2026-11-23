@@ -221,7 +221,7 @@ Then:
 2. Double-click `INSTALL.cmd`.
 3. Choose the workspace-access policy.
 4. Enter the Router URL.
-5. Paste the one-time pairing token.
+5. Paste the pairing token.
 
 The installer carries its own Node.js 22 x64 runtime, installs DevSpace privately under `%LOCALAPPDATA%\CodasSol\Agent`, and creates current-user autostart tasks.
 
@@ -248,7 +248,7 @@ Full Windows details: [`docs/windows-setup.md`](docs/windows-setup.md)
 
 - **Loopback-first Router** — default listener is `127.0.0.1`.
 - **Outbound remote Agents** — remote machines initiate the connection.
-- **One-time pairing token** — used only to enroll a device.
+- **Pairing token** — used only to enroll a device.
 - **Different per-device token** — enrollment credentials are not reused as runtime credentials.
 - **Local DevSpace OAuth** — DevSpace owner/access/refresh tokens stay on their own machine.
 - **Explicit allowed roots** — Windows DevSpace roots and advertised Router roots are synchronized.

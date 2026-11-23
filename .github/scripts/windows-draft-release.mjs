@@ -7,9 +7,9 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-export const TAG = 'windows-v0.2.0-rc.4';
-export const PACKAGE_NAME = 'Codas-Windows-0.2.0-rc.4';
-export const VERSION = 'windows-0.2.0-rc.4-c1497ca';
+export const TAG = 'windows-v0.2.0-rc.5';
+export const PACKAGE_NAME = 'Codas-Windows-0.2.0-rc.5';
+export const VERSION = 'windows-0.2.0-rc.5-c1497ca';
 export const TRANSPORT = 'c1497cac73c8d147dfcd74127018be470ae8a72a';
 const ZIP = `${PACKAGE_NAME}.zip`;
 const DATA_FILES = [ZIP, 'candidate-build.json', 'release.json', 'payload-manifest.json'];
@@ -17,7 +17,7 @@ const ASSETS = [...DATA_FILES, 'SHA256SUMS'];
 const hex = /^[a-f0-9]{40}$/;
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const jsonBytes = value => Buffer.from(JSON.stringify(value, null, 2) + '\n');
-const title = 'Codas Windows 0.2.0-rc.4 — 候选草稿';
+const title = 'Codas Windows 0.2.0-rc.5 — 候选草稿';
 
 function identity(repository, sha) {
   if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*\/[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(repository || '') || !hex.test(sha || '')) throw new Error('Repository and full lowercase source SHA are required.');
@@ -46,7 +46,7 @@ async function fileHash(filename) {
 export function draftNotes(sha) {
   if (!hex.test(sha || '')) throw new Error('A full lowercase source SHA is required.');
   return [
-    '# Codas Windows 0.2.0-rc.4 候选草稿', '',
+    '# Codas Windows 0.2.0-rc.5 候选草稿', '',
     '**这是未公开的候选草稿，尚未通过稳定版验收。** 安装包携带固定版本的 Node、DevSpace 依赖和 Windows 原生模块，可离线安装；配对和远程使用仍需网络。', '',
     `- 构建提交：\`${sha}\`。核心传输冻结于 \`${TRANSPORT}\`。`,
     '- CI 检查 Windows Node 22/24、Windows PowerShell 5.1 脚本与安装事务场景，并校验完整包及 SHA-256；这些结果不代表实机稳定性验收已经完成。',

@@ -18,8 +18,8 @@ permissions:
   contents: read
 
 env:
-  CANDIDATE_DIRECTORY: Codas-Windows-0.2.0-rc.4
-  CANDIDATE_VERSION: windows-0.2.0-rc.4-c1497ca
+  CANDIDATE_DIRECTORY: Codas-Windows-0.2.0-rc.5
+  CANDIDATE_VERSION: windows-0.2.0-rc.5-c1497ca
 
 jobs:
   windows:
@@ -168,7 +168,7 @@ jobs:
         id: candidate_artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Codas-Windows-0.2.0-rc.4-${{ github.sha }}-${{ github.run_attempt }}
+          name: Codas-Windows-0.2.0-rc.5-${{ github.sha }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/codas-windows-dist/*
           if-no-files-found: error
           compression-level: 0
@@ -185,7 +185,7 @@ jobs:
     permissions:
       contents: write
     concurrency:
-      group: codas-windows-draft-windows-v0.2.0-rc.4
+      group: codas-windows-draft-windows-v0.2.0-rc.5
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
