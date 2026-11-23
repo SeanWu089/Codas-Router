@@ -16,7 +16,7 @@ const state = new RouterPrivateState({ stateDir: defaultStateDir() });
 
 if (command === "init") {
   await state.init();
-  console.log(`CodasSol Router private state is ready in ${defaultStateDir()}`);
+  console.log(`Codas Router private state is ready in ${defaultStateDir()}`);
 } else if (command === "pairing-token") {
   await state.init();
   console.log(state.pairingToken);
@@ -47,7 +47,7 @@ if (command === "init") {
   }
 } else {
   console.log([
-    "CodasSol Router CLI",
+    "Codas Router CLI",
     "",
     "  npm run router:init",
     "  npm run router:pairing-token",

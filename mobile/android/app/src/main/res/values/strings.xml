@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">CodasSol</string>
-    <string name="eyebrow">CODASSOL MOBILE · V0</string>
+    <string name="app_name">Codas</string>
+    <string name="eyebrow">CODAS MOBILE · V0</string>
     <string name="headline">Route the Project,\nNot Devices.</string>
-    <string name="subtitle">A lightweight control surface for your CodasSol Router.</string>
+    <string name="subtitle">A lightweight control surface for your Codas Router.</string>
     <string name="router_label">ROUTER</string>
     <string name="backend_label">EXECUTION BACKEND</string>
     <string name="endpoint_label">USB ENDPOINT</string>

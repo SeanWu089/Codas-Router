@@ -5,11 +5,24 @@ const [portFile, mode, token] = process.argv.slice(2);
 
 const server = http.createServer((req, res) => {
   res.setHeader('content-type', 'application/json');
+  if (req.url.startsWith('/probe/')) {
+    if (req.headers.authorization) { res.writeHead(403); res.end('{}'); return; }
+    if (req.url === '/probe/hang') return;
+    if (req.url === '/probe/down') { res.writeHead(503); res.end('{}'); return; }
+    res.writeHead(200, { 'cache-control': 'public, max-age=3600' });
+    res.end(JSON.stringify({ ok: true, backendReachable: req.url !== '/probe/backend-down' })); return;
+  }
   if (req.headers.authorization !== `Bearer ${token}`) {
     res.writeHead(401); res.end(JSON.stringify({ error: 'unauthorized' })); return;
   }
   if (mode === 'legacy') {
     res.writeHead(404); res.end(JSON.stringify({ error: 'not found' })); return;
+  }
+  if (req.method === 'GET' && req.url === '/_codassol/usage') {
+    res.writeHead(200); res.end(JSON.stringify({version:1,since:1000,sampledAt:3000,
+      httpsRequests:42,receivedBytes:2048,sentBytes:4096,persistenceError:false,classifiedSince:2000,
+      categories:[{id:'historical',requests:30,receivedBytes:1024,sentBytes:2048},{id:'mcp',requests:5,receivedBytes:1024,sentBytes:2048},{id:'health',requests:7,receivedBytes:0,sentBytes:0}],
+      recentRequests:[{id:42,startedAt:2900,category:'mcp',method:'POST',receivedBytes:10,sentBytes:20,statusCode:200,durationMs:100,outcome:'complete'}]})); return;
   }
   if (req.method === 'GET' && req.url === '/_codassol/devices') {
     res.writeHead(200); res.end(JSON.stringify({

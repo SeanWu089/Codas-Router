@@ -4,7 +4,7 @@ set -euo pipefail
 # Isolated launchd smoke test: it uses a unique label, mocked DevSpace package
 # and no network listener. It never touches the production service or port.
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-TMP="$(mktemp -d '/tmp/CodasSol mac lifecycle.XXXXXX')"
+TMP="$(mktemp -d '/tmp/Codas mac lifecycle.XXXXXX')"
 LABEL="com.codassol.devspace.test.$$"
 DOMAIN="gui/$(id -u)"
 trap '/bin/launchctl bootout "$DOMAIN/$LABEL" >/dev/null 2>&1 || true; rm -rf "$TMP"' EXIT

@@ -1,7 +1,7 @@
 import Foundation
 import Darwin
 
-/// Manages only the LaunchAgent created by CodasSol-mac. Never signals an external process.
+/// Manages only this app's existing LaunchAgent. Never signals an external process.
 struct DevSpaceManager {
     let label = "com.codassol.devspace.mac"
 
@@ -61,7 +61,7 @@ struct DevSpaceManager {
 
     func diagnostic() -> CommandResult {
         guard let runner = Bundle.main.path(forResource: "devspace-runner", ofType: "zsh") else {
-            return CommandResult(code: -1, output: "Bundled DevSpace launcher is missing. Reinstall CodasSol-mac.")
+            return CommandResult(code: -1, output: "Bundled DevSpace launcher is missing. Reinstall Codas-mac.")
         }
         return command("/bin/zsh", [runner, "--diagnose"])
     }
@@ -119,7 +119,7 @@ struct DevSpaceManager {
             try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: staged.path)
             // rename(2) atomically replaces an old helper, preventing a missing-file window.
             guard rename(staged.path, launcher.path) == 0 else {
-                throw NSError(domain: "CodasSol-mac", code: Int(errno), userInfo: [NSLocalizedDescriptionKey: "Atomic launcher update failed: \(String(cString: strerror(errno)))"])
+                throw NSError(domain: "Codas-mac", code: Int(errno), userInfo: [NSLocalizedDescriptionKey: "Atomic launcher update failed: \(String(cString: strerror(errno)))"])
             }
 
             let plist: [String: Any] = [

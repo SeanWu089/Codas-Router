@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$REPO_DIR/dist"
-BUILD_DIR="$DIST_DIR/CodasSol-Windows-Agent"
+BUILD_DIR="$DIST_DIR/Codas-Windows-Agent"
 PAYLOAD_DIR="$BUILD_DIR/payload"
 NODE_VERSION="${CODASSOL_NODE_VERSION:-v22.23.3}"
 NODE_ARCHIVE="node-${NODE_VERSION}-win-x64.zip"
@@ -14,7 +14,7 @@ NODE_OFFICIAL_BASE="https://nodejs.org/dist/${NODE_VERSION}"
 DOWNLOAD_DIR="$DIST_DIR/.downloads"
 
 mkdir -p "$DIST_DIR" "$DOWNLOAD_DIR"
-rm -rf "$BUILD_DIR" "$DIST_DIR/CodasSol-Windows-Agent.zip"
+rm -rf "$BUILD_DIR" "$DIST_DIR/Codas-Windows-Agent.zip"
 mkdir -p "$PAYLOAD_DIR/app" "$PAYLOAD_DIR/runtime"
 
 download_with_fallback() {
@@ -71,7 +71,7 @@ rm -rf "$TMP_NODE"
 cp "$REPO_DIR"/src/*.js "$PAYLOAD_DIR/app/"
 cat > "$PAYLOAD_DIR/app/package.json" <<'JSON'
 {
-  "name": "codassol-windows-agent-runtime",
+  "name": "codas-windows-agent-runtime",
   "private": true,
   "type": "module"
 }
@@ -96,7 +96,7 @@ else
 fi
 
 cat > "$BUILD_DIR/README-WINDOWS.txt" <<'TXT'
-CodasSol Windows Router + Agent (v0.2 development)
+Codas Windows Router + Agent (v0.2 development)
 ===================================================
 
 1. Extract this ZIP to a normal folder.
@@ -122,15 +122,15 @@ TXT
 
 (
   cd "$DIST_DIR"
-  zip -q -r -X "CodasSol-Windows-Agent.zip" "CodasSol-Windows-Agent"
+  zip -q -r -X "Codas-Windows-Agent.zip" "Codas-Windows-Agent"
 )
 
 # Keep the legacy asset name for existing installers, and ship an explicitly
 # marked development node bundle that includes the independent Router.
-cp "$DIST_DIR/CodasSol-Windows-Agent.zip" "$DIST_DIR/CodasSol-Windows-Node-v0.2.0-dev.zip"
+cp "$DIST_DIR/Codas-Windows-Agent.zip" "$DIST_DIR/Codas-Windows-Node-v0.2.0-dev.zip"
 
-echo "Built: $DIST_DIR/CodasSol-Windows-Agent.zip"
-echo "Built: $DIST_DIR/CodasSol-Windows-Node-v0.2.0-dev.zip"
+echo "Built: $DIST_DIR/Codas-Windows-Agent.zip"
+echo "Built: $DIST_DIR/Codas-Windows-Node-v0.2.0-dev.zip"
 if [[ -s "$BUILD_DIR/router-default.txt" ]]; then
   echo "Default Router URL: $(cat "$BUILD_DIR/router-default.txt")"
 else

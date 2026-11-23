@@ -30,7 +30,7 @@ function Get-FixedNonSystemDrives {
 function Get-AccessRoots {
   $otherDrives = @(Get-FixedNonSystemDrives | Sort-Object -Unique)
   Write-Host ""
-  Write-Host "Choose CodasSol workspace access:" -ForegroundColor Cyan
+  Write-Host "Choose Codas workspace access:" -ForegroundColor Cyan
   Write-Host "  1. User profile only: $env:USERPROFILE"
   Write-Host "  2. RECOMMENDED: user profile + all fixed non-system drives"
   Write-Host "  3. All fixed non-system drives only (do not expose C: user profile)"
@@ -69,10 +69,10 @@ Write-Host "Applying allowed roots:" -ForegroundColor Cyan
 $Roots | ForEach-Object { Write-Host "  $_" }
 
 & $NodeExe $Helper $DevSpaceDir $ConfigPath $RootsArg $AgentConfigPath
-if ($LASTEXITCODE -ne 0) { throw "Unable to update CodasSol/DevSpace roots." }
+if ($LASTEXITCODE -ne 0) { throw "Unable to update Codas/DevSpace roots." }
 
 Write-Host ""
-Write-Host "Restarting CodasSol services ..."
+Write-Host "Restarting Codas services ..."
 Stop-ScheduledTask -TaskName "CodasSol Agent" -ErrorAction SilentlyContinue
 Stop-ScheduledTask -TaskName "CodasSol DevSpace" -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
@@ -107,7 +107,7 @@ for ($i = 0; $i -lt 20; $i++) {
     break
   } catch {}
 }
-if (-not $ready) { throw "CodasSol DevSpace did not restart successfully." }
+if (-not $ready) { throw "Codas DevSpace did not restart successfully." }
 
 Start-ScheduledTask -TaskName "CodasSol Agent"
 Write-Host ""

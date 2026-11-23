@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -24,3 +24,29 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  mac-menu:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify device-dot ordering and rendering
+        run: zsh test/mac/device-status-dots.test.sh
+
+      - name: Verify installer recovery
+        run: python3 test/mac/menu-installer.test.py
+
+      - name: Build signed menu archive
+        run: zsh scripts/mac/menu-app/build.sh
+
+      - name: Verify portable installer without installing
+        run: |
+          python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.12.zip --output dist/Codas-mac-0.3.12-installer
+          zsh dist/Codas-mac-0.3.12-installer/Install-Codas-mac.command --plan

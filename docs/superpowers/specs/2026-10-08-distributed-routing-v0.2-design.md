@@ -1,8 +1,8 @@
-# CodasSol v0.2: Independent Router Nodes
+# Codas v0.2: Independent Router Nodes
 
 ## Intent
 
-Any online computer may host a usable CodasSol Router; shutting down a Mac must
+Any online computer may host a usable Codas-Router; shutting down a Mac must
 not prevent a Windows computer from routing its own workspaces or routing to
 other reachable computers. The Router remains a DevSpace control plane; it is
 not a data synchronizer or a remote desktop.

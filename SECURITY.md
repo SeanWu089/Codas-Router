@@ -1,11 +1,11 @@
 # Security Policy
 
-CodasSol Router is intended to be self-hosted. The public repository contains
+Codas-Router is intended to be self-hosted. The public repository contains
 the framework; each user's deployment state and credentials must remain local.
 
 ## Current threat model
 
-CodasSol V1 assumes that the Router owner controls the enrolled machines and
+Codas V1 assumes that the Router owner controls the enrolled machines and
 that remote Agents run under operating-system accounts whose permissions are
 appropriate for the work they may perform.
 
@@ -14,10 +14,10 @@ per-device credentials, DevSpace allowed-root alignment, and fail-closed route
 selection. It is **not** an operating-system sandbox and does not turn an
 administrator/root account into a least-privilege execution environment.
 
-Before using CodasSol across the public Internet, add a trusted private-network
+Before using Codas across the public Internet, add a trusted private-network
 or authenticated reverse-proxy layer and review the deployment carefully.
 
-CodasSol can execute actions on real computers. Treat a Router credential as
+Codas can execute actions on real computers. Treat a Router credential as
 high-impact infrastructure access, not as a convenience-app password.
 
 ## Deployment boundary
@@ -63,7 +63,7 @@ connect over a trusted LAN, or the Router may be placed behind a TLS-protected
 private tunnel/reverse proxy. Do not expose the raw Router listener to an
 untrusted network.
 
-Until encrypted transport is built into CodasSol itself, assume that anyone
+Until encrypted transport is built into Codas itself, assume that anyone
 able to observe unprotected Router traffic could obtain bearer credentials.
 
 ### Least privilege
@@ -72,7 +72,7 @@ Each device should advertise only roots that the AI actually needs. On Windows,
 the recommended installer profile exposes the user's profile and optional fixed
 non-system drives instead of the whole system drive.
 
-The DevSpace allowedRoots configuration and CodasSol Agent advertised roots
+The DevSpace allowedRoots configuration and Codas Agent advertised roots
 must remain synchronized. v0.1.1 added installer support for this invariant.
 
 Public release bundles must not contain private Router addresses or deployment
@@ -81,7 +81,7 @@ default. v0.1.3 also normalizes installer examples to neutral placeholders.
 
 ### Fail-closed routing
 
-CodasSol rejects ambiguous device matches, offline matching devices, and
+Codas rejects ambiguous device matches, offline matching devices, and
 attempts to silently move an existing workspace binding to another device.
 These checks are security-relevant and should not be weakened merely to make
 routing more convenient.

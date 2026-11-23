@@ -1,5 +1,26 @@
 # Git workflow and Worktree responsibilities
 
+## Current naming and Mac publication (2026-11-23)
+
+The repository is now named **Codas-Router** and the menu component is
+**Codas-mac**. The current origin is
+`https://github.com/SeanWu089/Codas-Router.git`. Existing source worktrees can
+keep their physical paths while their common Git remote is updated. The
+dated inventory and historical tags below retain their original names.
+
+The Mac 0.3.12 release branch contains the existing Mac feature history plus
+the reviewed latest menu source, portable installer and regressions. Main
+publication is explicitly authorized. Unfinished Windows/architecture
+branches remain separate; do not merge them into main merely to publish the
+Mac component. Keep private installation receipts and machine-specific
+settings outside public commits.
+
+The installed menu target is `~/Applications/Codas-mac.app`; its login job is
+`com.codas.mac.menu`. Existing backend/state/service identities remain
+compatible. Old runtime paths in the historical inventory are not deployment
+instructions for this release. Reboot acceptance and protected old-app
+cleanup remain distinct from source publication.
+
 Status reviewed on 2026-10-10; verify with `git branch -avv` and `git worktree list` before changing anything.
 
 ## Long-lived branches

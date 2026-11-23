@@ -9,7 +9,7 @@ UID_VALUE="$(id -u)"
 
 if launchctl print "gui/$UID_VALUE/$LABEL" >/dev/null 2>&1; then
   launchctl bootout "gui/$UID_VALUE/$LABEL"
-  echo "CodasSol Router LaunchAgent stopped."
+  echo "Codas Router LaunchAgent stopped."
 fi
 
 if [[ ! -f "$PID_FILE" ]]; then
@@ -29,5 +29,5 @@ if kill -0 "$PID" 2>/dev/null; then
 fi
 
 rm -f "$PID_FILE"
-echo "CodasSol Router stopped."
+echo "Codas Router stopped."
 

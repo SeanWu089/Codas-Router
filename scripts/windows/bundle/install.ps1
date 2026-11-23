@@ -89,7 +89,7 @@ function Resolve-AccessRoots([string]$RequestedRoots) {
 
   $otherDrives = @(Get-FixedNonSystemDrives | Sort-Object -Unique)
   Write-Host ""
-  Write-Host "Choose CodasSol workspace access:" -ForegroundColor Cyan
+  Write-Host "Choose Codas workspace access:" -ForegroundColor Cyan
   Write-Host "  1. User profile only: $env:USERPROFILE"
   Write-Host "  2. RECOMMENDED: user profile + all fixed non-system drives"
   Write-Host "  3. All fixed non-system drives only"
@@ -119,7 +119,7 @@ function Resolve-AccessRoots([string]$RequestedRoots) {
 }
 
 Write-Host ""
-Write-Host "CodasSol Windows Router + Agent" -ForegroundColor Green
+Write-Host "Codas Windows Router + Agent" -ForegroundColor Green
 Write-Host "Independent local routing: no Mac connection or administrator install required."
 
 $Roots = Resolve-AccessRoots $Roots
@@ -148,7 +148,7 @@ if (-not (Test-Path $NodeSource)) { throw "Bundle payload is incomplete: payload
 if (-not (Test-Path $AppSource)) { throw "Bundle payload is incomplete: payload\app is missing." }
 
 Write-Step "Preparing a safe in-place upgrade"
-# Never overwrite the private Node executable while existing CodasSol tasks
+# Never overwrite the private Node executable while existing Codas tasks
 # are using it. Other Node installations and unrelated processes are untouched.
 foreach ($taskName in @("CodasSol Agent", "CodasSol Router", "CodasSol DevSpace")) {
   $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
@@ -160,12 +160,12 @@ if (Test-Path $NodeExe) {
   $oldProcesses = @(Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
     Where-Object { $_.ExecutablePath -eq $NodeExe })
   foreach ($oldProcess in $oldProcesses) {
-    Write-Host "Stopping prior private CodasSol runtime (PID $($oldProcess.ProcessId))."
+    Write-Host "Stopping prior private Codas runtime (PID $($oldProcess.ProcessId))."
     Stop-Process -Id $oldProcess.ProcessId -Force -ErrorAction Stop
   }
 }
 
-Write-Step "Installing the private CodasSol runtime"
+Write-Step "Installing the private Codas runtime"
 New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
 if (Test-Path $NodeDir) { Remove-Item -Recurse -Force $NodeDir }
 if (Test-Path $AppDir) { Remove-Item -Recurse -Force $AppDir }
@@ -223,7 +223,7 @@ if (-not (Test-Path $DevSpaceConfig)) {
   throw "DevSpace did not create $DevSpaceConfig."
 }
 & $NodeExe $ConfigureRoots $DevSpaceDir $DevSpaceConfig $Roots
-if ($LASTEXITCODE -ne 0) { throw "Unable to align DevSpace allowed roots with CodasSol Agent roots." }
+if ($LASTEXITCODE -ne 0) { throw "Unable to align DevSpace allowed roots with Codas Agent roots." }
 
 $StateDir = Join-Path $env:USERPROFILE ".codassol"
 New-Item -ItemType Directory -Force -Path $StateDir | Out-Null
@@ -249,7 +249,7 @@ for ($i = 0; $i -lt 30; $i++) {
 if (-not $ready) { throw "DevSpace did not become ready on 127.0.0.1:7676." }
 Write-Host "DevSpace health check passed."
 
-Write-Step "Optional connection to another CodasSol Router"
+Write-Step "Optional connection to another Codas Router"
 $DefaultRouterFile = Join-Path $BundleDir "router-default.txt"
 if ([string]::IsNullOrWhiteSpace($RouterUrl) -and (Test-Path $DefaultRouterFile)) {
   # A zero-byte router-default.txt returns $null in PowerShell 5.1. Never
@@ -278,7 +278,7 @@ if ($ShouldEnroll) {
   if ([string]::IsNullOrWhiteSpace($PairingToken)) { throw "Pairing token cannot be empty." }
   & $NodeExe $AgentScript enroll --router $RouterUrl --pairing-token $PairingToken --device-id $env:COMPUTERNAME --label $env:COMPUTERNAME --roots $Roots
   $PairingToken = $null
-  if ($LASTEXITCODE -ne 0) { throw "CodasSol Agent enrollment failed." }
+  if ($LASTEXITCODE -ne 0) { throw "Codas Agent enrollment failed." }
 }
 
 if (Test-Path $AgentConfig) {
@@ -307,13 +307,13 @@ if ($ShouldEnroll) {
   }
 }
 if (-not (Get-ScheduledTask -TaskName "CodasSol DevSpace" -ErrorAction SilentlyContinue)) {
-  throw "CodasSol DevSpace scheduled task is missing."
+  throw "The managed DevSpace scheduled task is missing."
 }
 if (-not (Get-ScheduledTask -TaskName "CodasSol Router" -ErrorAction SilentlyContinue)) {
-  throw "CodasSol Router scheduled task is missing."
+  throw "The managed Router scheduled task is missing."
 }
 if ((Test-Path $AgentConfig) -and -not (Get-ScheduledTask -TaskName "CodasSol Agent" -ErrorAction SilentlyContinue)) {
-  throw "CodasSol Agent scheduled task is missing."
+  throw "The managed Agent scheduled task is missing."
 }
 $localRouterReady = $false
 for ($i = 0; $i -lt 15; $i++) {

@@ -21,10 +21,10 @@ $devspaceAction = New-ScheduledTaskAction -Execute "powershell.exe" -Argument ('
 $agentAction = New-ScheduledTaskAction -Execute $NodeExe -Argument ('"' + $AgentScript + '" run') -WorkingDirectory (Join-Path $InstallRoot "app")
 $routerAction = New-ScheduledTaskAction -Execute "powershell.exe" -Argument ('-NoLogo -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $StartRouter + '"')
 
-Register-ScheduledTask -TaskName "CodasSol DevSpace" -Action $devspaceAction -Trigger $trigger -Settings $settings -Description "Run the private DevSpace backend for CodasSol on this PC." -Force | Out-Null
-Register-ScheduledTask -TaskName "CodasSol Router" -Action $routerAction -Trigger $trigger -Settings $settings -Description "Run a local independent CodasSol Router on this PC." -Force | Out-Null
+Register-ScheduledTask -TaskName "CodasSol DevSpace" -Action $devspaceAction -Trigger $trigger -Settings $settings -Description "Run the private DevSpace backend for Codas on this PC." -Force | Out-Null
+Register-ScheduledTask -TaskName "CodasSol Router" -Action $routerAction -Trigger $trigger -Settings $settings -Description "Run a local independent Codas Router on this PC." -Force | Out-Null
 if (Test-Path $AgentConfig) {
-  Register-ScheduledTask -TaskName "CodasSol Agent" -Action $agentAction -Trigger $trigger -Settings $settings -Description "Connect this PC to a remote CodasSol Router." -Force | Out-Null
+  Register-ScheduledTask -TaskName "CodasSol Agent" -Action $agentAction -Trigger $trigger -Settings $settings -Description "Connect this PC to a remote Codas Router." -Force | Out-Null
 }
 
 Start-ScheduledTask -TaskName "CodasSol DevSpace"
