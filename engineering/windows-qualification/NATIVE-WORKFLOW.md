@@ -1,13 +1,12 @@
-# Exact candidate package: native Windows CI template
+# Exact candidate package: native Windows CI workflow
 
-These files are maintained on a separate engineering branch. No workflow,
-GitHub API request, full artifact download, remote-machine operation, or
-qualification handoff is executed by preparing the RC5 rebind. This workflow provides engineering CI
-evidence only. It does not publish or mark a release stable, replace the real
-Windows PC acceptance, or explain the previously observed intermittent PC
-startup failure.
+These files are maintained on a separate engineering branch. The exact RC5
+package completed a successful native workflow run on 2026-11-23, recorded below.
+This workflow provides engineering CI evidence. It does not publish or mark a
+release stable, replace actual SeansWPC acceptance, or establish the physical
+cause of the previously observed intermittent PC startup failure.
 
-## Files and intended destinations
+## Workflow files
 
 | Prepared file | Destination on the separate engineering branch |
 |---|---|
@@ -40,10 +39,10 @@ The independent branch is `release/windows-package-check-rc5-20261123`.
 Historical RC4 metadata and its failed overall native run remain labeled as
 history in `HANDOFF-20261123.md`; they are not evidence for the changed RC5 payload.
 
-The preflight checks this binding with read-only GitHub metadata requests when
-the workflow actually runs. It verifies the completed successful run, exact
+The preflight checks this binding with read-only GitHub metadata requests. In
+the successful RC5 run it verified the completed candidate run, exact
 source and repository IDs, expected candidate workflow, successful package job,
-exact unexpired artifact metadata, and unchanged run attempt. It writes a receipt
+exact unexpired artifact metadata, and unchanged run attempt. It wrote a receipt
 containing the same 13 binding fields plus `verified:true`. It never selects an
 artifact by a floating name, latest run, branch head, or search result.
 
@@ -92,7 +91,7 @@ existing physical-PC state is part of this workflow.
 
 ## Interpreting results
 
-The intended controller exercises the actual shipped Windows Node, archive
+The controller exercises the actual shipped Windows Node, archive
 extraction and dependency hashes, native module loading, isolated backend, and
 authenticated loopback OAuth/MCP hostname command. Its report must state which
 checks actually ran and passed, and that the environment was a disposable CI
@@ -105,11 +104,37 @@ wake or reboot, or resolution of an intermittent issue that CI did not reproduce
 Those claims still require their own real observations. There is no fixed
 24-hour/8-hour publication gate under the user's latest daily-use instruction.
 
-## Preparation validation
+## Observed RC5 execution
 
-Preparation is limited to syntax and static integration checks, plus independent
-read-only review. Do not describe these checks as a workflow execution or a
-full-package smoke pass. No actual stable qualification report is supplied here.
+Native run <https://github.com/SeanWu089/Codas-Router/actions/runs/45116052919>,
+job `137499042914`, attempt `1`, completed successfully on engineering commit
+`25a9f3f12a8d2b29d470a162853b208d9712b2f4`. All five candidate assets were verified;
+the product extractor restored all 38,432 payload files (672,561,559 bytes),
+after 28 outer files (306,074,870 bytes) passed their checks. Bundled Windows x64
+Node 22.23.3 / ABI 127, SQLite, all three node-pty addons and Koffi passed. Fresh
+isolated unpaired state, actual backend readiness, authenticated OAuth/MCP
+workspace opening and `hostname` all passed.
+
+Product STOP succeeded, the supervisor exited with code 0 and a clean receipt
+without parent disconnection or forced termination, the loopback listener
+closed, all owned child handles exited and the private temporary tree was
+removed. The report records `remoteAcceptance:false`,
+`physicalPcAcceptance:false`, `taskSchedulerAcceptance:false`,
+`stableQualification:false` and `paired:false`.
+
+The sanitized report artifact is `14791926340`, name
+`Codas-Windows-Package-Smoke-25a9f3f12a8d2b29d470a162853b208d9712b2f4-1`,
+size `2117` bytes and digest
+`sha256:dd2616e7de564c330144ef32046362279b45d53cf609f7488b31a1ce8c96a6b1`.
+See [RC5-CI-EVIDENCE-20261123.json](RC5-CI-EVIDENCE-20261123.json) for the parsed
+sanitized summaries and exact provenance.
+
+The earlier local syntax, static integration, binding/sanitization checks and
+independent review remain preparation evidence. The successful workflow is
+actual native CI evidence. Physical SeansWPC installation, task/logon,
+stop/start, repair/rollback and other-device Codas access still need their own
+observations; they are blocked by the execution channel's `-32603` response.
+No actual stable qualification report is supplied here.
 
 ## Official interfaces used
 

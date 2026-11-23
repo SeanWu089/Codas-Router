@@ -3,10 +3,13 @@
 This engineering helper checks the real candidate archive on a fresh GitHub-hosted
 Windows runner. It does not mock the backend or OAuth/MCP calls. It does not
 qualify SEANSWPC, Task Scheduler, remote plugin access or a stable release.
-The RC5 rebind does not itself download or execute a full candidate archive.
-Historical RC4 execution results are recorded separately in `HANDOFF-20261123.md`.
+The exact RC5 candidate completed a successful full-package run on 2026-11-23:
+<https://github.com/SeanWu089/Codas-Router/actions/runs/45116052919>,
+job `137499042914`, attempt `1`, engineering commit
+`25a9f3f12a8d2b29d470a162853b208d9712b2f4`. Historical RC4 failures remain
+recorded separately in `HANDOFF-20261123.md`.
 
-## Files to add on the independent package-check branch
+## Files on the independent package-check branch
 
 | Prepared file | Repository destination |
 | --- | --- |
@@ -17,7 +20,7 @@ Historical RC4 execution results are recorded separately in `HANDOFF-20261123.md
 | `windows-package-check.json` | `.github/windows-package-check.json` |
 | `windows-package-check.yml` | `.github/workflows/windows-package-check.yml` |
 
-The workflow notes describe its additional sanitized-console helper, if present.
+The workflow notes describe its additional sanitized-console helper.
 `self-check.mjs` is an optional local preparation check and is not needed by the
 actual workflow. These files belong to the separate engineering branch.
 
@@ -26,7 +29,8 @@ The RC5 engineering branch is based exactly on candidate source
 The committed JSON pins attempt `1`, artifact `14791501882`, its exact metadata,
 inner ZIP size/hash and payload manifest hash supplied by the release coordinator
 after successful candidate assembly. It contains no floating or pending fields.
-The preflight must produce a matching verified receipt before the smoke can run.
+The successful run's preflight produced a matching verified receipt before the
+smoke executed the bound package.
 The independent branch is `release/windows-package-check-rc5-20261123`; it does
 not rewrite the candidate commit or the historical RC4 draft.
 
@@ -71,6 +75,23 @@ PowerShell launcher; the product's internal child IPC remains unchanged.
 
 ## Results and diagnostics
 
+The actual RC5 run passed all five asset checks and extracted 28 outer files
+(306,074,870 bytes) plus 38,432 payload files (672,561,559 bytes). The bundled
+Windows x64 Node 22.23.3 / ABI 127, SQLite query, three node-pty native addons and
+Koffi call passed. The real backend started with fresh isolated, unpaired state;
+authenticated OAuth/MCP workspace opening and `hostname` passed.
+
+Product STOP passed. The supervisor exited cleanly with code 0 without a parent
+IPC disconnection or forced termination; the loopback listener closed, every
+owned child handle exited and private temporary state was removed.
+
+The sanitized report artifact is `14791926340`, named
+`Codas-Windows-Package-Smoke-25a9f3f12a8d2b29d470a162853b208d9712b2f4-1`,
+`2117` bytes, digest
+`sha256:dd2616e7de564c330144ef32046362279b45d53cf609f7488b31a1ce8c96a6b1`.
+The parsed evidence is retained in
+[RC5-CI-EVIDENCE-20261123.json](RC5-CI-EVIDENCE-20261123.json).
+
 The report directory contains only:
 
 - `native-package-smoke.json`: exact artifact binding, stage results, child
@@ -82,7 +103,10 @@ error messages, credentials, raw child output, state/profile files or diagnostic
 archive are included. Successful temporary state is removed; failed private
 state stays on the ephemeral runner for the remaining job lifetime and is not
 uploaded. Console/report output always states that physical-PC, Task Scheduler,
-remote and stable qualification are false.
+remote and stable qualification are false. The successful report also retains
+`paired:false`. Actual SeansWPC installation, Task Scheduler/logon, stop/start,
+missing-file repair, rollback and other-device Codas access remain pending while
+the execution channel returns `-32603`.
 
 Original RC4 preparation checks passed: Node 22 syntax, pure binding/sanitization checks,
 PowerShell syntax and three small self-contained ZIP helper checks (regular
@@ -91,5 +115,6 @@ These preparation checks did not execute a Windows payload and are not native
 acceptance. The RC5 rebind's own local binding/sanitization self-check passed under
 Node 22.23.3, including old-version and mismatched-receipt rejections. Syntax,
 read-only workflow integration and protected-source equivalence checks passed.
-The exact RC5 archive must still execute in the independent Windows workflow.
-Prior RC4 payload success does not verify changed RC5 bytes.
+The later successful native run above supplies the actual RC5 package-execution
+evidence. The earlier preparation checks and RC4 payload results remain separate
+historical evidence.

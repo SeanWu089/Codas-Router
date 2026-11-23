@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "kind": "windows-rc5-engineering-evidence",
+  "recordedAt": "2026-11-23T05:15:15Z",
+  "targetMachine": "SeansWPC / SEANSWPC",
+  "releaseState": "unpublished-candidate",
+  "stableQualification": false,
+  "acceptancePolicy": {
+    "name": "windows-daily-use",
+    "fixedDurationRequired": false,
+    "naturalWake": "unobserved",
+    "fullPcReboot": "untested"
+  },
+  "candidate": {
+    "version": "windows-0.2.0-rc.5-c1497ca",
+    "repository": "SeanWu089/Codas-Router",
+    "sourceCommit": "a9c8e888b3c82491e892b7d428f05660ae4717e4",
+    "sourceTree": "3e0e0f48e9cfdc25ed0cbfddd2a4415fdce1a2d2",
+    "frozenTransportCommit": "c1497cac73c8d147dfcd74127018be470ae8a72a",
+    "ci": {
+      "runId": 45115505375,
+      "attempt": 1,
+      "url": "https://github.com/SeanWu089/Codas-Router/actions/runs/45115505375",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "artifact": {
+      "id": 14791501882,
+      "name": "Codas-Windows-0.2.0-rc.5-a9c8e888b3c82491e892b7d428f05660ae4717e4-1",
+      "sizeBytes": 242500804,
+      "digest": "sha256:90aaa997819f4038ca11e8c0621bf9c72581a7b174415326058921fa8d7e180b",
+      "expired": false,
+      "expiresAt": "2026-12-23T05:07:04Z"
+    },
+    "draft": {
+      "id": 455009453,
+      "url": "https://github.com/SeanWu089/Codas-Router/releases/tag/untagged-e3e30d428d841b9be47b",
+      "tag": "windows-v0.2.0-rc.5",
+      "targetCommit": "a9c8e888b3c82491e892b7d428f05660ae4717e4",
+      "draft": true,
+      "prerelease": true,
+      "publishedAt": null,
+      "assets": [
+        {
+          "name": "candidate-build.json",
+          "sizeBytes": 647,
+          "digest": "sha256:e9d4ddd2b1b24970fce74b6f40a6aeb13892da4fc14d5b81e47816fb5f0198a0",
+          "state": "uploaded"
+        },
+        {
+          "name": "Codas-Windows-0.2.0-rc.5.zip",
+          "sizeBytes": 233878024,
+          "digest": "sha256:f585fbecfc14462e6abba27c8d61d8e71d5564458bf2582227cd9978979d2ed6",
+          "state": "uploaded"
+        },
+        {
+          "name": "payload-manifest.json",
+          "sizeBytes": 8614724,
+          "digest": "sha256:6e2a0b69c6966895e9ec61fa351fde1aa1cb7a092717d73403103ca3afa26dbd",
+          "state": "uploaded"
+        },
+        {
+          "name": "release.json",
+          "sizeBytes": 6396,
+          "digest": "sha256:77aaec44dc330460ebe528f6d42f0004b2274996fadc4c0d128ecd5ee318de3a",
+          "state": "uploaded"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sizeBytes": 349,
+          "digest": "sha256:67b0dab1c4add326ddaaba17d8630e73d621f770b25c2f925f19b4b04d1204ef",
+          "state": "uploaded"
+        }
+      ]
+    }
+  },
+  "sourceValidation": {
+    "node22": {
+      "version": "22.23.3",
+      "jobId": 137497305432,
+      "passed": 159,
+      "failed": 0,
+      "skipped": 0,
+      "nativeFileShareRetryPassed": true,
+      "nativePowerShellInstallerFixturesPassed": 40,
+      "nativePowerShellInstallerFixturesFailed": 0,
+      "restartRoundsPassed": 5,
+      "restartScenariosPerRound": 2
+    },
+    "node24": {
+      "version": "24.21.0",
+      "jobId": 137497305326,
+      "passed": 159,
+      "failed": 0,
+      "skipped": 0,
+      "nativeFileShareRetryPassed": true,
+      "nativePowerShellInstallerFixturesPassed": 40,
+      "nativePowerShellInstallerFixturesFailed": 0
+    },
+    "physicalPcInstallerAcceptance": false
+  },
+  "nativePackage": {
+    "environment": "disposable Windows CI runner",
+    "engineeringCommit": "25a9f3f12a8d2b29d470a162853b208d9712b2f4",
+    "ci": {
+      "runId": 45116052919,
+      "attempt": 1,
+      "jobId": 137499042914,
+      "url": "https://github.com/SeanWu089/Codas-Router/actions/runs/45116052919",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "artifact": {
+      "id": 14791926340,
+      "name": "Codas-Windows-Package-Smoke-25a9f3f12a8d2b29d470a162853b208d9712b2f4-1",
+      "sizeBytes": 2117,
+      "digest": "sha256:dd2616e7de564c330144ef32046362279b45d53cf609f7488b31a1ce8c96a6b1",
+      "expired": false,
+      "expiresAt": "2026-12-23T05:14:23Z"
+    },
+    "sanitizedConsoleSummaries": [
+      {
+        "file": "native-package-smoke.json",
+        "available": true,
+        "passed": true,
+        "remoteAcceptance": false,
+        "physicalPcAcceptance": false,
+        "taskSchedulerAcceptance": false,
+        "stableQualification": false,
+        "paired": false,
+        "temporaryWorkspaceRetained": false,
+        "manifestSha256": "6e2a0b69c6966895e9ec61fa351fde1aa1cb7a092717d73403103ca3afa26dbd",
+        "zipSha256": "f585fbecfc14462e6abba27c8d61d8e71d5564458bf2582227cd9978979d2ed6",
+        "phaseAtCompletion": "real-backend-and-oauth-mcp",
+        "stages": {
+          "assets": {
+            "passed": true,
+            "files": 5,
+            "manifestSha256": "6e2a0b69c6966895e9ec61fa351fde1aa1cb7a092717d73403103ca3afa26dbd",
+            "zipSha256": "f585fbecfc14462e6abba27c8d61d8e71d5564458bf2582227cd9978979d2ed6"
+          },
+          "outerZip": {
+            "passed": true,
+            "files": 28,
+            "bytes": 306074870
+          },
+          "payload": {
+            "passed": true,
+            "files": 38432,
+            "manifestSha256": "6e2a0b69c6966895e9ec61fa351fde1aa1cb7a092717d73403103ca3afa26dbd"
+          },
+          "native": {
+            "passed": true,
+            "sqliteQueryPassed": true,
+            "koffiOwnProcessQueryPassed": true,
+            "ptyNativeAddonsLoaded": 3,
+            "node": "v22.23.3",
+            "abi": "127",
+            "platform": "win32",
+            "arch": "x64"
+          },
+          "initialization": {
+            "passed": true,
+            "newlyCreated": true,
+            "remotePaired": false,
+            "fullPayloadVerifiedByProduct": true
+          },
+          "localMcp": {
+            "passed": true,
+            "authenticated": true,
+            "workspaceOpened": true,
+            "harmlessCommandCompleted": true,
+            "remoteAcceptance": false,
+            "actualProductBackend": true,
+            "hostnameMatched": true
+          }
+        },
+        "cleanup": {
+          "supervisorExitObserved": true,
+          "productCleanShutdown": true,
+          "backendListenerClosed": true,
+          "allOwnedHandlesExited": true,
+          "stop": {
+            "passed": true
+          }
+        },
+        "children": [
+          {
+            "exited": true,
+            "exitCode": 0,
+            "stdoutBytes": 46,
+            "stderrBytes": 0,
+            "label": "outer-zip",
+            "stdoutSha256": "f8ebf03669263257e7154c861b72b9869a265334d8f9ceb278ac6b5d983125c1",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "result": {
+              "passed": true,
+              "files": 28,
+              "bytes": 306074870
+            }
+          },
+          {
+            "exited": true,
+            "exitCode": 0,
+            "stdoutBytes": 159,
+            "stderrBytes": 0,
+            "label": "payload-extract",
+            "stdoutSha256": "908d0d56f7c3c4ba7a0cb75fbdf5f05237a6db592e2419f36c97781d78786ecb",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "result": {
+              "passed": true,
+              "files": 38432,
+              "bytes": 672561559,
+              "manifestSha256": "6e2a0b69c6966895e9ec61fa351fde1aa1cb7a092717d73403103ca3afa26dbd"
+            }
+          },
+          {
+            "exited": true,
+            "exitCode": 0,
+            "stdoutBytes": 163,
+            "stderrBytes": 0,
+            "label": "native-modules",
+            "stdoutSha256": "b5bc75e823c1f8ec1b78ed724cd3f2e28f54816ae986d304c1013157fe546bf3",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "result": {
+              "passed": true,
+              "sqliteQueryPassed": true,
+              "koffiOwnProcessQueryPassed": true,
+              "ptyNativeAddonsLoaded": 3,
+              "node": "v22.23.3",
+              "abi": "127",
+              "platform": "win32",
+              "arch": "x64"
+            }
+          },
+          {
+            "exited": true,
+            "exitCode": 0,
+            "stdoutBytes": 133,
+            "stderrBytes": 0,
+            "label": "initialize-state",
+            "stdoutSha256": "7866b5f9907928d20226824b8d70ce356d891f1505fecfd8362b87dadaf01b55",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "result": {
+              "passed": true,
+              "newlyCreated": true,
+              "remotePaired": false
+            }
+          },
+          {
+            "exited": true,
+            "exitCode": 0,
+            "stdoutBytes": 269,
+            "stderrBytes": 0,
+            "label": "oauth-mcp-hostname",
+            "stdoutSha256": "7f3fe839562d1adc15b2d4b19959abd14dcd429daccf305ead946874c7ec5207",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "result": {
+              "passed": true,
+              "authenticated": true,
+              "workspaceOpened": true,
+              "harmlessCommandCompleted": true,
+              "remoteAcceptance": false,
+              "versionId": "windows-0.2.0-rc.5-c1497ca",
+              "manifestSha256": "6e2a0b69c6966895e9ec61fa351fde1aa1cb7a092717d73403103ca3afa26dbd"
+            }
+          },
+          {
+            "exited": true,
+            "exitCode": 0,
+            "stdoutBytes": 99,
+            "stderrBytes": 0,
+            "label": "product-stop",
+            "stdoutSha256": "1db7bc51660ae7a107f65d23e3dca2ea83cf182fab3f7b2c277168468d358b7c",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "result": {
+              "passed": true
+            }
+          },
+          {
+            "exited": true,
+            "exitCode": 0,
+            "stdoutBytes": 103,
+            "stderrBytes": 0,
+            "label": "supervisor",
+            "stdoutSha256": "bb5c20e664613bbc1cb85fef120e173b20bec30b2aa4441de6545ae115adf174",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "result": {
+              "passed": true,
+              "cleanShutdown": true
+            }
+          }
+        ],
+        "finalSupervisor": {
+          "cleanShutdown": true,
+          "pid": 4820,
+          "backendPid": null,
+          "agentPid": null,
+          "leasePid": 1848,
+          "status": "stopped",
+          "versionId": "windows-0.2.0-rc.5-c1497ca",
+          "verification": {
+            "verifiedFiles": 38432,
+            "totalFiles": 38432
+          }
+        }
+      },
+      {
+        "file": "runtime-events.sanitized.json",
+        "available": true,
+        "totalEvents": 5,
+        "events": [
+          {
+            "event": "supervisor-start",
+            "versionId": "windows-0.2.0-rc.5-c1497ca"
+          },
+          {
+            "pid": 6412,
+            "failureCount": 0,
+            "event": "backend-start"
+          },
+          {
+            "pid": 6412,
+            "event": "backend-ready"
+          },
+          {
+            "event": "user-disabled"
+          },
+          {
+            "cleanShutdown": true,
+            "event": "supervisor-stop"
+          }
+        ]
+      }
+    ]
+  },
+  "preservedHistory": {
+    "physicalPcRuntime": {
+      "passed": 17,
+      "failed": 2
+    },
+    "stateWriteReproduction": {
+      "runId": 45114242905,
+      "causeCode": "EPERM",
+      "syscall": "rename",
+      "phase": "initial-verification-progress",
+      "externalCause": "not-established"
+    },
+    "rc4Native": {
+      "runId": 45113984293,
+      "overall": "failure",
+      "cause": "Engineering parent IPC channel retained the otherwise finished supervisor; corrected harness has no parent IPC and retains all STOP and exit checks."
+    }
+  },
+  "pendingAcceptance": [
+    "Actual isolated package installation and owned logon task on SeansWPC",
+    "Physical-PC stop/restart, missing-file detection, repair and retained rollback",
+    "Authenticated Codas plugin workspace access from another device using the new isolated installation"
+  ],
+  "connectionBlocker": {
+    "observedAt": "2026-11-23T05:15:15Z",
+    "operation": "Codas device discovery",
+    "result": "MCP -32603 Internal error",
+    "deviceOfflineInferred": false,
+    "remoteChangeReview": "show_changes attempted on both modified remote workspaces and returned the same internal error"
+  }
+}
