@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrWhiteSpace($PairingToken)) {
-  $SecurePairingToken = Read-Host "Paste the CodasSol Router pairing token" -AsSecureString
+  $SecurePairingToken = Read-Host "Paste the Codas Router pairing token" -AsSecureString
   $Pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePairingToken)
   try {
     $PairingToken = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($Pointer)
@@ -36,9 +36,14 @@ if (-not (Get-Command "devspace" -ErrorAction SilentlyContinue)) {
   npm install -g "@waishnav/devspace"
 }
 
-$RepoDir = Join-Path $env:USERPROFILE "CodasSol-Router"
+$RepoDir = Join-Path $env:USERPROFILE "Codas-Router"
+# Reuse an existing legacy checkout instead of cloning a second installation.
+$LegacyRepoDir = Join-Path $env:USERPROFILE "CodasSol-Router"
+if (-not (Test-Path $RepoDir) -and (Test-Path $LegacyRepoDir)) {
+  $RepoDir = $LegacyRepoDir
+}
 if (-not (Test-Path $RepoDir)) {
-  git clone "https://github.com/SeanWu089/CodasSol-Router.git" $RepoDir
+  git clone "https://github.com/SeanWu089/Codas-Router.git" $RepoDir
 } else {
   git -C $RepoDir pull --ff-only
 }

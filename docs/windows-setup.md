@@ -3,19 +3,22 @@
 > **v0.2 development branch:** the self-contained bundle now also installs a
 > local Router, accessible on `http://127.0.0.1:17676`, regardless of whether
 > the original Mac is online. Remote enrollment is optional. The current
-> published v0.1.3 package remains Agent-only until a v0.2 release.
+> historical v0.1.x packages remain Agent-only. Check the chosen Windows
+> release notes for its implementation and validation status.
 > See [Distributed routing v0.2](distributed-routing.md) for peer configuration.
 
-This guide connects a Windows computer to an already-running CodasSol Router.
+This guide connects a Windows computer to an already-running Codas-Router.
 The Windows machine does not need an ngrok endpoint or inbound firewall rule.
 
 ## Recommended personal setup: self-contained bundle
 
-For most users, download the latest Windows bundle from:
+Choose an explicitly labeled Windows release and download the asset listed on that release:
 
-https://github.com/SeanWu089/CodasSol-Router/releases/latest
+https://github.com/SeanWu089/Codas-Router/releases
 
-Transfer the ZIP to Windows, extract it, then double-click INSTALL.cmd.
+Historical assets retain their original filenames; new source builds use Codas-Windows names. The repository-wide latest release may be a Mac component.
+
+Transfer the Windows ZIP to Windows, extract it, then double-click INSTALL.cmd.
 
 Public bundles do not embed a build machine's LAN address. The installer asks
 for the Router URL when no private default was intentionally supplied. For a
@@ -32,14 +35,14 @@ global registry or proxy settings.
 
 The repository-based setup below remains available for development.
 
-During installation, choose the workspace roots that CodasSol is allowed to
+During installation, choose the workspace roots that Codas is allowed to
 route to this machine. The recommended profile grants the current Windows user
 profile plus fixed non-system drives. It does not grant the whole system drive
 C:\ by default, and it does not automatically include removable or network
 drives.
 
 The installer writes the same root list to both DevSpace allowedRoots and the
-CodasSol Agent configuration. This keeps the Router's advertised capabilities
+Codas Agent configuration. This keeps the Router's advertised capabilities
 aligned with the machine-local security boundary.
 
 ### Release notes
@@ -63,7 +66,7 @@ On macOS:
 
     ./scripts/package-windows-agent.sh
 
-The output is dist/CodasSol-Windows-Agent.zip.
+The output is dist/Codas-Windows-Agent.zip.
 
 ## Prerequisites
 
@@ -108,7 +111,7 @@ The Router issues a separate per-device Agent token.
 ## 3. Test in foreground
 
 ```powershell
-cd "$env:USERPROFILE\CodasSol-Router"
+cd "$env:USERPROFILE\Codas-Router"
 node src\agent.js run
 ```
 

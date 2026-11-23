@@ -122,7 +122,7 @@ export class DevSpaceLocalOAuth {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          client_name: "CodasSol Agent",
+          client_name: "Codas Agent",
           redirect_uris: [redirectUri],
           grant_types: ["authorization_code", "refresh_token"],
           response_types: ["code"],

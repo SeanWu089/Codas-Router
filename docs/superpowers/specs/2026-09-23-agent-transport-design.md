@@ -1,8 +1,8 @@
-# CodasSol Agent Transport Design
+# Codas Agent Transport Design
 
 ## Goal
 
-Connect remote computers to CodasSol Router without exposing their DevSpace
+Connect remote computers to Codas-Router without exposing their DevSpace
 ports to the Internet. A remote Agent always initiates outbound traffic to the
 Router and talks to DevSpace only through loopback on its own machine.
 

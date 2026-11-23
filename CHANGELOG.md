@@ -1,5 +1,27 @@
 # Changelog
 
+## Codas-Router naming and Codas-mac 0.3.12 — 2026-11-23
+
+- Unify the public project, package, interface and new build-artifact names
+  under Codas; the repository is Codas-Router and the menu app is Codas-mac.
+  Retain existing protocol, credential, service and application identities
+  for installed-client compatibility.
+- Publish the complete current Mac menu source, including live device and
+  usage display, stable panel geometry, pinned Back navigation, outside-click
+  dismissal, and menu-dot/tooltip order matching the device list.
+- Build and sign in a physical temporary directory and distribute ZIPs,
+  preventing loose build apps from competing with the installed application.
+- Add an exact-path native login launcher and installer revision 2, with
+  single-instance verification, whole-directory rollback and independent
+  optional legacy-copy cleanup.
+- Generate portable installer folders with generic settings and checksum
+  validation. No development-machine installation receipts or private paths
+  are part of the package.
+- Include dot/layout/installer regressions in the Mac test command and add
+  macOS build and portable-plan verification to CI.
+- This is a Mac component checkpoint. Windows stability qualification,
+  physical Mac reboot acceptance and protected legacy cleanup remain separate.
+
 ## Verified Mac integration — 2026-10-10
 
 - Consolidate previously tested Device Registry v1, Mac-side device discovery,

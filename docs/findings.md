@@ -1,5 +1,15 @@
 # Findings
 
+## 2026-11-23 — Codas naming and Mac 0.3.12
+
+- The project is Codas-Router, the product is Codas and the menu component is Codas-mac. Existing protocol, credential-directory and service identities remain compatible; a branding change must not create a second installation identity or discard pairing.
+- The observed old-menu recurrence was caused by launching a discoverable backup application. ZIP-only build output and an exact-path native login launcher address selection ambiguity. Historical application copies still need explicit, authorized retirement; a loaded startup job is not a physical reboot test.
+- Menu dots independently sorted opaque device IDs while the panel retained directory order. Both now preserve the same remote-device sequence, including tooltip numbering and stale-state handling.
+- Legacy-copy retirement can fail with EPERM. Installer revision 2 verifies and commits canonical installation first, then archives and atomically renames optional old copies. Deferred cleanup does not roll back a working new app. Whole-directory holdings preserve rollback without recursive old-app deletion.
+- Building a loose application inside an iCloud directory can reintroduce FinderInfo metadata and fail signing. Build and signature verification now happen in a physical temporary directory; only the archive is published.
+- The panel-layout fixture uses an isolated authenticated loopback server because global URLProtocol registration does not reliably intercept ephemeral URLSession. The fixture lives outside Node's automatic test-discovery directory.
+- Public release settings are generated without developer-machine paths, device metadata or installation logs. Explicit legacy paths are provided locally by the installer operator. Historical local diagnostic commits are not part of the public publication checkpoint.
+
 - 2026-10-08 — On the Mac, `launchctl bootstrap gui/$UID` can transiently return exit 5 immediately after booting out a Router LaunchAgent; retrying registration succeeded. `command -v node` also resolved to an ephemeral fnm multishell executable, so persistent launchd configuration should use `node -p process.execPath` and retry label registration. After removing a temporary manual Router and restarting the LaunchAgent, the daemon listened on port 17676 and its authenticated peer-info endpoint reported protocol 2 with a reachable backend.
 - 2026-10-08 — Windows `devspace.cmd` can reference an absent npm bin entrypoint even though the installed `@waishnav/devspace@1.1.0-beta.4` has a working `dist/cli.js`. Both Windows installation/init and scheduled startup must invoke the latter via the bundled Node runtime. The v0.2 worktree now enforces this contract in tests; physical Windows verification is still required.
 - 2026-10-08 — Reinstalling the Windows bundle must stop its own scheduled tasks/private `node.exe` processes before replacing the private runtime; otherwise open executables may prevent in-place replacement. Never target arbitrary system-wide Node processes.

@@ -1,8 +1,8 @@
-# CodasSol Mobile — Android V0
+# Codas Mobile — Android V0
 
 **Route the Project, Not Devices.**
 
-Lightweight native Android control client that checks the CodasSol Router and its local DevSpace backend. The mobile client does not execute commands, host DevSpace, or store Router/Agent pairing credentials.
+Lightweight native Android control client that checks the Codas-Router and its local DevSpace backend. The mobile client does not execute commands, host DevSpace, or store Router/Agent pairing credentials.
 
 ## Build (macOS, no Android Studio)
 

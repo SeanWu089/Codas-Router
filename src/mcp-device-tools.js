@@ -1,7 +1,7 @@
 /** Router-local MCP metadata and discovery. Never includes credentials or peer URLs. */
 const DEVICE_TOOL = {
   name: "codassol_list_devices",
-  description: "Discover the user's registered CodasSol devices and their current routing readiness. Use this before choosing a computer when the user has not specified one; ask the user when more than one candidate fits. Device presence alone does not guarantee command execution.",
+  description: "Discover the user's registered Codas devices and their current routing readiness. Use this before choosing a computer when the user has not specified one; ask the user when more than one candidate fits. Device presence alone does not guarantee command execution.",
   inputSchema: { type: "object", properties: {}, additionalProperties: false },
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true }
 };
@@ -12,14 +12,14 @@ export function addRouterTools(message) {
     if (tool.name !== "open_workspace") return tool;
     return {
       ...tool,
-      description: `${tool.description || "Open a DevSpace workspace."} For CodasSol routing, optionally specify device_id from codassol_list_devices to open the path on a particular computer.`,
+      description: `${tool.description || "Open a DevSpace workspace."} For Codas routing, optionally specify device_id from codassol_list_devices to open the path on a particular computer.`,
       inputSchema: {
         ...tool.inputSchema,
         properties: {
           ...tool.inputSchema?.properties,
           device_id: {
             type: "string",
-            description: "Optional target CodasSol device ID. For ambiguous paths choose a device first. This is routing metadata and is not sent to DevSpace."
+            description: "Optional target Codas device ID. For ambiguous paths choose a device first. This is routing metadata and is not sent to DevSpace."
           }
         }
       }

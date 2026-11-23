@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 dist/
+.build/
+__pycache__/
 
 # Local runtime configuration
 .env
@@ -8,8 +10,9 @@ dist/
 !.env.example
 config.local.*
 
-# CodasSol private deployment state
+# Codas private deployment state
 .codassol/
+.codas/
 state/
 data/
 secrets/

@@ -9,7 +9,7 @@ release or a zero-configuration cross-network service.
 
 Build the v0.2 Windows bundle from this branch using
 `./scripts/package-windows-agent.sh`, then copy
-`dist/CodasSol-Windows-Node-v0.2.0-dev.zip` to Windows, extract it, and run
+`dist/Codas-Windows-Node-v0.2.0-dev.zip` to Windows, extract it, and run
 `INSTALL.cmd`.
 Choose your local workspace roots. When asked whether to connect to an
 existing Router, choose **No** if the Mac is offline. The installer starts

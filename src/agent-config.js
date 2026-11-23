@@ -16,7 +16,7 @@ export class AgentConfigStore {
   async load() {
     const parsed = JSON.parse(await readFile(this.filePath, "utf8"));
     if (parsed?.version !== 1) {
-      throw new Error("Unsupported CodasSol Agent config format");
+      throw new Error("Unsupported Codas Agent config format");
     }
     this.value = parsed;
     return structuredClone(parsed);

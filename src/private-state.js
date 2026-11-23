@@ -41,7 +41,7 @@ export class RouterPrivateState {
     try {
       const parsed = JSON.parse(await readFile(this.#filePath, "utf8"));
       if (parsed?.version !== 1 || typeof parsed.pairingToken !== "string") {
-        throw new Error("Unsupported CodasSol router private-state format");
+        throw new Error("Unsupported Codas router private-state format");
       }
       this.#state = {
         version: 1,

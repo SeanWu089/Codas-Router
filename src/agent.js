@@ -204,7 +204,7 @@ export async function runAgent({
       }
     } catch (error) {
       process.stderr.write(
-        `CodasSol Agent connection error: ${error instanceof Error ? error.message : String(error)}\n`
+        `Codas Agent connection error: ${error instanceof Error ? error.message : String(error)}\n`
       );
       await sleep(2_000);
     }
@@ -213,7 +213,7 @@ export async function runAgent({
 
 function usage() {
   return [
-    "CodasSol Agent",
+    "Codas Agent",
     "",
     "Enroll:",
     "  node src/agent.js enroll --router <url> --pairing-token <token> [--device-id <id>] [--label <label>] [--roots <root1|root2>]",
@@ -238,7 +238,7 @@ if (isMain) {
       roots: splitRoots(options.roots),
       devspaceBaseUrl: options["devspace-url"] || "http://127.0.0.1:7676"
     });
-    console.log("CodasSol Agent enrolled. Pairing token was not stored.");
+    console.log("Codas Agent enrolled. Pairing token was not stored.");
   } else if (command === "run") {
     await runAgent();
   } else {

@@ -1,4 +1,5 @@
 import http from "node:http";
+import { TrafficUsage, handleUsageRoute } from "./traffic-usage.js";
 import net from "node:net";
 import { pathToFileURL } from "node:url";
 import { loadConfig } from "./config.js";
@@ -469,7 +470,10 @@ async function handleAgentRoute(req, res, runtime) {
 }
 
 export function createRouterServer(config = loadConfig(), runtime = null) {
-  return http.createServer(async (req, res) => {
+  const usage = new TrafficUsage({ stateDir: config.stateDir, persist: Boolean(runtime) });
+  const server = http.createServer(async (req, res) => {
+    if (handleUsageRoute(req, res, runtime, usage)) return;
+    usage.track(req, res);
     try {
       if (await handlePeerRoute(req, res, config, runtime)) return;
     } catch (error) {
@@ -556,7 +560,7 @@ export function createRouterServer(config = loadConfig(), runtime = null) {
       }
       const payload = JSON.stringify({
         error: "backend_unavailable",
-        message: "CodasSol Router could not reach the selected backend. No retry was attempted."
+        message: "Codas Router could not reach the selected backend. No retry was attempted."
       });
       res.writeHead(502, {
         "content-type": "application/json; charset=utf-8",
@@ -569,6 +573,8 @@ export function createRouterServer(config = loadConfig(), runtime = null) {
     req.once("aborted", () => upstream.destroy());
     req.pipe(upstream);
   });
+  server.once("close", () => usage.close());
+  return server;
 }
 
 export async function startRouter(config = loadConfig(), runtime = null) {
@@ -592,7 +598,7 @@ if (isMain) {
   const config = loadConfig();
   const server = await startRouter(config);
   console.log(
-    `CodasSol Router listening on http://${config.listenHost}:${config.listenPort} -> http://${config.backendHost}:${config.backendPort}`
+    `Codas Router listening on http://${config.listenHost}:${config.listenPort} -> http://${config.backendHost}:${config.backendPort}`
   );
   const shutdown = () => server.close(() => process.exit(0));
   process.on("SIGINT", shutdown);

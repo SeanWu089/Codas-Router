@@ -4,9 +4,9 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/ic_codassol"
+        android:icon="@drawable/ic_codas"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/ic_codassol"
+        android:roundIcon="@drawable/ic_codas"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity

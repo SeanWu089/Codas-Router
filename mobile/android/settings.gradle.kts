@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CodasSolMobile"
+rootProject.name = "CodasMobile"
 include(":app")

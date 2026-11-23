@@ -22,20 +22,23 @@ struct DeviceInfo: Decodable, Identifiable {
     let lastSeenAt: Double?
 
     var displayTitle: String {
+        if status == "external-unavailable" { return "External unavailable" }
         if status == "degraded" { return "Degraded" }
         if status == "unknown" { return "Unknown" }
         if status == "offline" || !online { return "Offline" }
         if isThisDevice { return backendReachable == true ? "Ready" : "Degraded" }
         if executionVerified == false { return "Execution failed" }
+        if backendReachable == false && kind != "agent" { return "Backend unavailable" }
         if executionVerified == true { return "Ready" }
-        return kind == "agent" ? "Agent online" : "Unverified"
+        return kind == "agent" ? "Agent online" : "Online"
     }
 
-    enum DisplaySeverity { case ready, caution, offline, unknown }
+    enum DisplaySeverity { case ready, connected, caution, offline, unknown }
 
     var displaySeverity: DisplaySeverity {
         switch displayTitle {
         case "Ready": return .ready
+        case "Online", "Agent online": return .connected
         case "Offline": return .offline
         case "Unknown": return .unknown
         default: return .caution
@@ -67,6 +70,21 @@ struct DeviceInfo: Decodable, Identifiable {
                    online: connected && backend, backendReachable: backend,
                    executionVerified: nil,
                    lastSeenAt: nil)
+    }
+
+    func withLocalHealth(connected: Bool, backend: Bool) -> DeviceInfo {
+        DeviceInfo(id: id, installationId: installationId, name: name,
+                   platform: platform, kind: kind, isThisDevice: isThisDevice,
+                   status: !connected ? "offline" : backend ? "online" : "degraded",
+                   online: connected && backend, backendReachable: backend,
+                   executionVerified: executionVerified, lastSeenAt: lastSeenAt)
+    }
+
+    func withExternalUnavailable() -> DeviceInfo {
+        DeviceInfo(id: id, installationId: installationId, name: name,
+                   platform: platform, kind: kind, isThisDevice: isThisDevice,
+                   status: "external-unavailable", online: online, backendReachable: backendReachable,
+                   executionVerified: executionVerified, lastSeenAt: lastSeenAt)
     }
 
     func withUnknownStatus() -> DeviceInfo {
@@ -105,6 +123,15 @@ enum DirectoryFailure: Error, LocalizedError {
 
 /// All catalog requests are loopback-only; never forwards an admin bearer to remote peers.
 struct DeviceDirectoryClient {
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.urlCache = nil
+        config.httpCookieStorage = nil
+        config.timeoutIntervalForRequest = 4
+        config.timeoutIntervalForResource = 5
+        return URLSession(configuration: config)
+    }()
     private let base: URL
     private let stateFile: URL
 
@@ -158,6 +185,39 @@ struct DeviceDirectoryClient {
         return entries.values.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
+    /// Keep enrolled machines visible even while the network/Router is unavailable.
+    /// Disk metadata carries no liveness proof, so every cached row starts Unknown.
+    func cachedDirectory() -> [DeviceInfo] {
+        let file = stateFile.deletingLastPathComponent().appendingPathComponent("devices.json")
+        guard let data = try? Data(contentsOf: file),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let records = json["devices"] as? [[String: Any]] else { return legacyRegistrations() }
+        let state = (try? Data(contentsOf: stateFile)).flatMap {
+            try? JSONSerialization.jsonObject(with: $0) as? [String: Any]
+        }
+        let localInstallation = state?["installationId"] as? String
+        return records.compactMap { record in
+            guard let id = record["id"] as? String, !id.isEmpty else { return nil }
+            let installation = record["installationId"] as? String
+            let rename = record["rename"] as? [String: Any]
+            return DeviceInfo(id: id, installationId: installation,
+                name: rename?["name"] as? String ?? record["defaultName"] as? String ?? id,
+                platform: record["platform"] as? String ?? "unknown",
+                kind: record["kind"] as? String ?? "router",
+                isThisDevice: installation != nil && installation == localInstallation,
+                status: "unknown", online: false, backendReachable: nil,
+                executionVerified: nil, lastSeenAt: nil)
+        }
+    }
+
+    func usage() async throws -> TrafficSnapshot {
+        let data = try await fetch("/_codassol/usage")
+        let result = try JSONDecoder().decode(TrafficSnapshot.self, from: data)
+        guard result.version == 1, result.httpsRequests >= 0,
+              result.receivedBytes >= 0, result.sentBytes >= 0 else { throw DirectoryFailure.invalidReply }
+        return result
+    }
+
     private func fetch(_ endpoint: String, method: String = "GET", payload: Data? = nil) async throws -> Data {
         let url = URL(string: endpoint, relativeTo: base)!.absoluteURL
         var request = URLRequest(url: url)
@@ -169,7 +229,7 @@ struct DeviceDirectoryClient {
             request.httpBody = payload
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw DirectoryFailure.invalidReply }
         switch http.statusCode {
         case 200: return data
@@ -211,7 +271,7 @@ struct DeviceDirectoryClient {
         var request = URLRequest(url: url)
         request.timeoutInterval = 2
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await Self.session.data(for: request)
             guard (response as? HTTPURLResponse)?.statusCode == 200,
                   let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let ok = json["ok"] as? Bool, ok else {
@@ -221,6 +281,174 @@ struct DeviceDirectoryClient {
                                 backendReachable: json["backendReachable"] as? Bool ?? true)
         } catch {
             return RouterHealth(connected: false, backendReachable: false)
+        }
+    }
+}
+
+/// Network checks do not assert that a ChatGPT account/connector is authenticated.
+struct ExternalConnectivity {
+    let chatGPT: Bool
+    let ingress: Bool
+    let checkedAt: Date
+    let ingressCheckedAt: Date
+    init(chatGPT: Bool, ingress: Bool, checkedAt: Date, ingressCheckedAt: Date? = nil) {
+        self.chatGPT = chatGPT
+        self.ingress = ingress
+        self.checkedAt = checkedAt
+        self.ingressCheckedAt = ingressCheckedAt ?? checkedAt
+    }
+    func isFresh(at now: Date = Date()) -> Bool {
+        let age = now.timeIntervalSince(checkedAt)
+        return age >= 0 && age < 40 && now.timeIntervalSince(ingressCheckedAt) < 330
+    }
+    func ready(at now: Date = Date()) -> Bool { isFresh(at: now) && chatGPT && ingress }
+}
+
+extension DeviceDirectoryClient {
+    static func configuredIngress() -> URL? {
+        let file = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/LaunchAgents/com.codassol.ngrok.ingress.plist")
+        guard let data = try? Data(contentsOf: file),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              let env = plist["EnvironmentVariables"] as? [String: String],
+              let raw = env["CODASSOL_PUBLIC_URL"], let url = URL(string: raw),
+              url.scheme == "https", url.host != nil, url.user == nil, url.password == nil else { return nil }
+        return url.appendingPathComponent("_codassol/health")
+    }
+
+    func externalConnectivity(chatURL: URL = URL(string: "https://chatgpt.com/robots.txt")!,
+                              ingressURL: URL? = DeviceDirectoryClient.configuredIngress(),
+                              previous: ExternalConnectivity? = nil) async -> ExternalConnectivity {
+        async let chat = probeExternal(chatURL, health: false)
+        // The free public ingress has a request quota. Reuse its result for at most
+        // five minutes; network changes and manual refresh discard this snapshot.
+        if let previous, Date().timeIntervalSince(previous.ingressCheckedAt) < (previous.ingress ? 300 : 30) {
+            return await ExternalConnectivity(chatGPT: chat, ingress: previous.ingress,
+                checkedAt: Date(), ingressCheckedAt: previous.ingressCheckedAt)
+        }
+        async let ingress = probeExternal(ingressURL, health: true)
+        return await ExternalConnectivity(chatGPT: chat, ingress: ingress, checkedAt: Date())
+    }
+
+    private func probeExternal(_ url: URL?, health: Bool) async -> Bool {
+        guard let url else { return false }
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4)
+        request.httpMethod = health ? "GET" : "HEAD"
+        if health { request.setValue("true", forHTTPHeaderField: "ngrok-skip-browser-warning") }
+        do {
+            let (data, response) = try await Self.session.data(for: request)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200,
+                  http.url?.host == url.host else { return false }
+            if !health { return true }
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
+            return json["ok"] as? Bool == true && json["backendReachable"] as? Bool == true
+        } catch { return false }
+    }
+}
+
+struct TrafficSnapshot: Decodable {
+    let version: Int
+    let since: Double
+    let sampledAt: Double
+    let httpsRequests: Int64
+    let receivedBytes: Int64
+    let sentBytes: Int64
+    let persistenceError: Bool
+    let classifiedSince: Double?
+    let categories: [TrafficCategory]?
+    let recentRequests: [TrafficRequestRecord]?
+    init(version: Int, since: Double, sampledAt: Double, httpsRequests: Int64,
+         receivedBytes: Int64, sentBytes: Int64, persistenceError: Bool,
+         classifiedSince: Double? = nil, categories: [TrafficCategory]? = nil,
+         recentRequests: [TrafficRequestRecord]? = nil) {
+        self.version = version; self.since = since; self.sampledAt = sampledAt
+        self.httpsRequests = httpsRequests; self.receivedBytes = receivedBytes
+        self.sentBytes = sentBytes; self.persistenceError = persistenceError
+        self.classifiedSince = classifiedSince; self.categories = categories
+        self.recentRequests = recentRequests
+    }
+    var totalBytes: Int64 { receivedBytes + sentBytes }
+    func rates(since previous: TrafficSnapshot?) -> (received: Double, sent: Double) {
+        guard let previous, previous.since == since, sampledAt > previous.sampledAt,
+              receivedBytes >= previous.receivedBytes, sentBytes >= previous.sentBytes else { return (0, 0) }
+        let elapsed = (sampledAt - previous.sampledAt) / 1000
+        return (Double(receivedBytes - previous.receivedBytes) / elapsed,
+                Double(sentBytes - previous.sentBytes) / elapsed)
+    }
+    static func bytes(_ value: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: value, countStyle: .decimal)
+    }
+}
+
+
+struct TrafficCategory: Decodable, Identifiable {
+    let id: String
+    let requests: Int64
+    let receivedBytes: Int64
+    let sentBytes: Int64
+    var totalBytes: Int64 { receivedBytes + sentBytes }
+    var title: String { Self.title(id) }
+    static func title(_ id: String) -> String {
+        switch id {
+        case "mcp": return "MCP / tool requests"
+        case "health": return "Health checks"
+        case "heartbeat": return "Device heartbeats"
+        case "device_stream": return "Device stream / reconnect"
+        case "device_poll": return "Device polling"
+        case "device_results": return "Device results"
+        case "discovery": return "Device directory"
+        case "peer_sync": return "Peer synchronization"
+        case "enrollment": return "Device enrollment"
+        case "historical": return "Historical · unclassified"
+        default: return "Other requests"
+        }
+    }
+}
+struct TrafficRequestRecord: Decodable, Identifiable {
+    let id: Int64
+    let startedAt: Double
+    let category: String
+    let method: String
+    let receivedBytes: Int64
+    let sentBytes: Int64
+    let statusCode: Int?
+    let durationMs: Double?
+    let outcome: String
+    var title: String { TrafficCategory.title(category) }
+    var resultTitle: String {
+        if outcome == "active" { return "In progress" }
+        if outcome == "interrupted" { return "Interrupted by restart" }
+        if outcome == "aborted" { return "Connection closed" }
+        return statusCode.map { "HTTP \($0)" } ?? "No response"
+    }
+}
+
+
+/// The menu icon and panel share this aggregate of the displayed device states.
+enum PanelConnectionStatus: Equatable {
+    case checking, connected, partial, offline
+    static func resolve(_ states: [DeviceInfo.DisplaySeverity]) -> PanelConnectionStatus {
+        guard !states.isEmpty else { return .checking }
+        let online = states.filter { $0 == .ready || $0 == .connected }.count
+        if online == states.count { return .connected }
+        if online > 0 || states.contains(.caution) { return .partial }
+        if states.contains(.unknown) { return .checking }
+        return .offline
+    }
+    var title: String {
+        switch self {
+        case .connected: return "Connected"
+        case .partial: return "Partial connection"
+        case .checking: return "Checking"
+        case .offline: return "Offline"
+        }
+    }
+    var iconAlpha: Double {
+        switch self {
+        case .connected: return 1
+        case .partial: return 1
+        case .checking: return 0.45
+        case .offline: return 0.35
         }
     }
 }

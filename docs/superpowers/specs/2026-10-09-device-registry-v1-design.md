@@ -2,7 +2,7 @@
 
 ## Approved direction
 
-Provide one logical device directory across CodasSol clients, without requiring a permanently online Mac or a hosted coordinator. Keep the routing registry and user-facing directory separate: changing a display name must never redirect an existing workspace or mutate a device identity.
+Provide one logical device directory across Codas clients, without requiring a permanently online Mac or a hosted coordinator. Keep the routing registry and user-facing directory separate: changing a display name must never redirect an existing workspace or mutate a device identity.
 
 ## Alternative architectures considered
 

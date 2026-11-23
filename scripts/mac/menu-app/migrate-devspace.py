@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-time, independently launched and recoverable CodasSol-mac cutover.
+"""One-time, independently launched and recoverable Codas-mac cutover.
 
 Prepare is non-disruptive. The actual worker runs in launchd, outside the
 DevSpace/MCP process it needs to replace. It restores a legacy backup service
@@ -123,16 +123,22 @@ def legacy_pid() -> int:
     return pid
 
 
+def application_resources() -> Path:
+    resources = ("devspace-runner.zsh", "migrate-devspace.py")
+    for name in ("Codas-mac.app", "CodasSol-mac.app"):
+        directory = HOME / "Applications" / name / "Contents/Resources"
+        if all((directory / resource).is_file() for resource in resources):
+            return directory
+    raise RuntimeError("Application resources missing; install Codas-mac before migration")
+
+
 def preflight() -> int:
     if not healthy():
         raise RuntimeError("DevSpace/Router health not ready; refusing migration")
     if any(loaded(label) for label in (MANAGED, RESCUE, MIGRATOR, WATCHDOG)):
         raise RuntimeError("A managed, rescue, migration, or watchdog LaunchAgent is already loaded")
     pid = legacy_pid()
-    app_resources = HOME / "Applications/CodasSol-mac.app/Contents/Resources"
-    for resource in ("devspace-runner.zsh", "migrate-devspace.py"):
-        if not (app_resources / resource).is_file():
-            raise RuntimeError(f"Application resource missing: {resource}")
+    app_resources = application_resources()
     diag = run("/bin/zsh", str(app_resources / "devspace-runner.zsh"), "--diagnose")
     if diag.returncode != 0:
         raise RuntimeError(f"Managed runner preflight failed: {diag.stderr}")
