@@ -1,0 +1,134 @@
+name: Windows complete candidate package check
+
+# Engineering CI only. This is not a physical-PC qualification or publication.
+on:
+  push:
+    branches:
+      - 'release/windows-package-check-*'
+    paths:
+      - '.github/workflows/windows-package-check.yml'
+      - '.github/windows-package-check.json'
+      - 'scripts/windows/ci/**'
+      - 'src/**'
+      - 'dependencies/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'LICENSE'
+      - 'scripts/windows/stable/**'
+      - 'test/**'
+      - '.github/workflows/windows-stable-validation.yml'
+      - '.github/scripts/windows-draft-release.mjs'
+      - '.github/scripts/windows-draft-release.test.mjs'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  native_package:
+    name: Actual offline package / Windows / Node 22.23.3
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/windows-package-check-')
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Preserve committed bytes on the ephemeral Windows runner
+        shell: powershell
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.3'
+
+      - name: Allocate canonical isolated evidence paths
+        id: paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const base = fs.realpathSync(process.env.RUNNER_TEMP);
+          const root = fs.mkdtempSync(path.join(base, 'codas-package-check-'));
+          const artifactDir = path.join(root, 'artifact');
+          const reportDir = path.join(root, 'report');
+          fs.mkdirSync(artifactDir); fs.mkdirSync(reportDir);
+          const values = { artifact_dir: fs.realpathSync(artifactDir), report_dir: fs.realpathSync(reportDir), receipt_file: path.join(root, 'binding-receipt.json') };
+          for (const [name, value] of Object.entries(values)) {
+            if (/[\r\n]/.test(value)) throw new Error('Invalid runner path.');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`);
+          }
+          '@ | & node --input-type=module -
+          if ($LASTEXITCODE -ne 0) { throw 'Could not allocate canonical isolated paths.' }
+
+      - name: Bind the exact successful candidate run and artifact metadata
+        id: binding
+        timeout-minutes: 3
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODAS_BINDING_RECEIPT: ${{ steps.paths.outputs.receipt_file }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & node scripts/windows/ci/verify-candidate-binding.mjs `
+            --binding-file .github/windows-package-check.json `
+            --receipt-file $env:CODAS_BINDING_RECEIPT
+          if ($LASTEXITCODE -ne 0) { throw 'Exact candidate artifact preflight failed.' }
+
+      - name: Restore the verified original transport Git objects
+        shell: pwsh
+        run: |
+          & node scripts/windows/stable/restore-frozen-source.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned frozen source restore failed.' }
+
+      - name: Download only the pinned candidate artifact from its exact run
+        uses: actions/download-artifact@v4
+        with:
+          repository: ${{ steps.binding.outputs.repository }}
+          run-id: ${{ steps.binding.outputs.candidate_run_id }}
+          artifact-ids: ${{ steps.binding.outputs.candidate_artifact_id }}
+          github-token: ${{ github.token }}
+          merge-multiple: true
+          path: ${{ steps.paths.outputs.artifact_dir }}
+
+      - name: Exercise the real bundled Windows package locally
+        timeout-minutes: 22
+        env:
+          CODAS_PACKAGE_ARTIFACT: ${{ steps.paths.outputs.artifact_dir }}
+          CODAS_BINDING_RECEIPT: ${{ steps.paths.outputs.receipt_file }}
+          CODAS_PACKAGE_REPORT: ${{ steps.paths.outputs.report_dir }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & node scripts/windows/ci/full-package-smoke.mjs `
+            --artifact-dir $env:CODAS_PACKAGE_ARTIFACT `
+            --binding-file .github/windows-package-check.json `
+            --binding-receipt $env:CODAS_BINDING_RECEIPT `
+            --report-dir $env:CODAS_PACKAGE_REPORT
+          if ($LASTEXITCODE -ne 0) { throw 'Full Windows package smoke failed; inspect the sanitized report artifact.' }
+
+      - name: Print bounded sanitized failure evidence to the job log
+        if: ${{ always() && steps.paths.outputs.report_dir != '' }}
+        env:
+          CODAS_SANITIZED_REPORT: ${{ steps.paths.outputs.report_dir }}
+        shell: pwsh
+        run: |
+          & node scripts/windows/ci/print-sanitized-report.mjs --report-dir $env:CODAS_SANITIZED_REPORT
+          if ($LASTEXITCODE -ne 0) { throw 'Sanitized report console summary could not be read.' }
+
+      - name: Preserve only sanitized CI reports, including on failure
+        if: ${{ always() && steps.paths.outputs.report_dir != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Codas-Windows-Package-Smoke-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ steps.paths.outputs.report_dir }}/
+          if-no-files-found: warn
+          retention-days: 30
+
+# Token scope is read-only. GH_TOKEN is passed only to the metadata preflight;
+# the native smoke receives no GitHub token, private pairing, or release secret.
+# Only sanitized report/ is uploaded; local profiles/state/raw logs stay private.
+# https://github.com/actions/download-artifact#download-artifacts-from-other-workflow-runs-or-repositories
