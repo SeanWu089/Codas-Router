@@ -1,4 +1,4 @@
-# CodasSol Router V1 Design
+# Codas-Router V1 Design
 
 ## Goal
 
@@ -14,7 +14,7 @@ The existing path remains untouched during development. The new router runs on a
 
 V1 is intentionally small:
 
-1. Run a local CodasSol Router on `127.0.0.1:17676` by default.
+1. Run a local Codas-Router on `127.0.0.1:17676` by default.
 2. Transparently proxy MCP HTTP traffic to the current Mac DevSpace at `127.0.0.1:7676`.
 3. Expose a router-only health endpoint for diagnostics.
 4. Fail safely when the backend is unavailable. A failed proxy request must not trigger retries of mutation requests.

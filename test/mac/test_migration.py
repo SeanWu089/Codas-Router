@@ -27,6 +27,26 @@ class MigrationSafetyTests(unittest.TestCase):
         self.addCleanup(self.state_patch.stop)
         self.addCleanup(self.base_patch.stop)
 
+    def test_prefers_renamed_application_resources(self):
+        home = Path(self.tmp.name)
+        for name in ("Codas-mac.app", "CodasSol-mac.app"):
+            resources = home / "Applications" / name / "Contents/Resources"
+            resources.mkdir(parents=True)
+            for item in ("devspace-runner.zsh", "migrate-devspace.py"):
+                (resources / item).write_text("fixture")
+        with patch.object(m, "HOME", home):
+            self.assertEqual(m.application_resources(),
+                             home / "Applications/Codas-mac.app/Contents/Resources")
+
+    def test_supports_legacy_application_resources(self):
+        home = Path(self.tmp.name)
+        resources = home / "Applications/CodasSol-mac.app/Contents/Resources"
+        resources.mkdir(parents=True)
+        for item in ("devspace-runner.zsh", "migrate-devspace.py"):
+            (resources / item).write_text("fixture")
+        with patch.object(m, "HOME", home):
+            self.assertEqual(m.application_resources(), resources)
+
     def test_migration_success_only_stops_exact_listener_and_verifies_health(self):
         listeners = [[123456], [], []]
         with patch.object(m, "healthy", return_value=True), \

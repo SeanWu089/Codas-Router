@@ -1,4 +1,6 @@
-# Codas Android — wireless Agent preview
+# Codas Android — wireless Agent and native recovery
+
+The current integrated Flutter UI is documented in [../flutter/README.md](../flutter/README.md). This directory remains the canonical native service and recovery UI source.
 
 The phone connects **outbound over authenticated HTTPS/SSE** to a configured
 Codas Router. Wi-Fi and mobile data are supported transports; USB is only an

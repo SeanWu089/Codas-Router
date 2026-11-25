@@ -1,10 +1,10 @@
 {
-  "name": "codassol-router",
+  "name": "codas-router",
   "version": "0.2.0-dev",
   "description": "Transparent workspace routing for AI agents across physical machines.",
   "private": true,
   "license": "MIT",
-  "repository": "github:SeanWu089/CodasSol-Router",
+  "repository": "github:SeanWu089/Codas-Router",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
@@ -16,7 +16,7 @@
     "router:lan": "node src/router-cli.js lan",
     "agent": "node src/agent.js run",
     "test": "node --test",
-    "test:mac": "zsh test/mac/menu-app.test.sh && zsh test/mac/launchagent.test.sh && zsh test/mac/device-panel.test.sh && /usr/bin/python3 -m unittest discover -s test/mac -p 'test_*.py' -v"
+    "test:mac": "zsh test/mac/menu-app.test.sh && zsh test/mac/launchagent.test.sh && zsh test/mac/device-panel.test.sh && zsh test/mac/device-status-dots.test.sh && zsh test/mac/device-panel-layout.test.sh && python3 test/mac/menu-installer.test.py && python3 -m unittest discover -s test/mac -p 'test_*.py' -v"
   },
   "engines": {
     "node": ">=22"

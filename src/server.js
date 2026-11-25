@@ -656,7 +656,7 @@ export function createRouterServer(config = loadConfig(), runtime = null) {
       }
       const payload = JSON.stringify({
         error: "backend_unavailable",
-        message: "CodasSol Router could not reach the selected backend. No retry was attempted."
+        message: "Codas Router could not reach the selected backend. No retry was attempted."
       });
       res.writeHead(502, {
         "content-type": "application/json; charset=utf-8",
@@ -694,7 +694,7 @@ if (isMain) {
   const config = loadConfig();
   const server = await startRouter(config);
   console.log(
-    `CodasSol Router listening on http://${config.listenHost}:${config.listenPort} -> http://${config.backendHost}:${config.backendPort}`
+    `Codas Router listening on http://${config.listenHost}:${config.listenPort} -> http://${config.backendHost}:${config.backendPort}`
   );
   const shutdown = () => {
     server.codassolRuntime.agentHub.closeStreams();

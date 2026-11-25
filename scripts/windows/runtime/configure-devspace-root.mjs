@@ -38,16 +38,16 @@ if (!unchanged) {
   writeFileSync(configPath, updated.endsWith("\n") ? updated : updated + "\n", "utf8");
   console.log("Updated DevSpace allowed roots:", roots.join(", "));
 } else {
-  console.log("DevSpace allowed roots already match CodasSol Agent roots.");
+  console.log("DevSpace allowed roots already match Codas Agent roots.");
 }
 
 if (agentConfigPath) {
   if (!existsSync(agentConfigPath)) {
-    throw new Error(`CodasSol Agent config does not exist: ${agentConfigPath}`);
+    throw new Error(`Codas Agent config does not exist: ${agentConfigPath}`);
   }
   const agentConfig = JSON.parse(readFileSync(agentConfigPath, "utf8"));
   if (!agentConfig.device || typeof agentConfig.device !== "object") {
-    throw new Error("CodasSol Agent config has no device object.");
+    throw new Error("Codas Agent config has no device object.");
   }
   const agentRoots = Array.isArray(agentConfig.device.roots) ? agentConfig.device.roots : [];
   const agentUnchanged = agentRoots.length === roots.length &&
@@ -57,8 +57,8 @@ if (agentConfigPath) {
     const temporary = `${agentConfigPath}.${process.pid}.tmp`;
     writeFileSync(temporary, JSON.stringify(agentConfig, null, 2) + "\n", "utf8");
     renameSync(temporary, agentConfigPath);
-    console.log("Updated CodasSol Agent advertised roots:", roots.join(", "));
+    console.log("Updated Codas Agent advertised roots:", roots.join(", "));
   } else {
-    console.log("CodasSol Agent advertised roots already match.");
+    console.log("Codas Agent advertised roots already match.");
   }
 }

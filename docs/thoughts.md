@@ -9,9 +9,9 @@
 
 - 2026-10-13 confirmed transport constraint: CodasSol must not use Tailscale. Outbound authenticated SSE job delivery through the public ingress is the intended cross-device path; ingress takeover is separate. Historical optional-Tailscale suggestions below are superseded. Keep the user's unrelated Tailscale setup intact. Mac product peer removed; Windows reciprocal cleanup and SSE deployment remain pending.
 
-- Position CodasSol as a **transparent workspace router**, not as another general remote desktop or all-in-one AI runtime.
+- Position Codas as a **transparent workspace router**, not as another general remote desktop or all-in-one AI runtime.
 - Product headline: **Route the Project, Not Devices.** The user/agent addresses the project or workspace; the Router resolves the physical machine.
-- Keep DevSpace as the execution layer; keep CodasSol focused on discovery, routing, workspace affinity, credentials, and policy.
+- Keep DevSpace as the execution layer; keep Codas focused on discovery, routing, workspace affinity, credentials, and policy.
 - Security directions: per-action approvals, capability-scoped tokens, audit trails, token rotation/revocation, signed updates, protocol compatibility, least-privilege OS accounts, and optional secure relay/Tailscale integration.
 - Routing directions: aliases/tags, capability routing (`gpu`, `cuda`, `macos`, `office`, `home`), load awareness, wake/sleep state, and explicit overrides.
 - Consumer workflows: retrieve/send a file from any device, start a download/render at home, run a long task on a powerful desktop from a phone, collect files across machines, and operate home-lab devices without learning SSH.

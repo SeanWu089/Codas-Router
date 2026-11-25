@@ -8,11 +8,11 @@ $RootsFile = Join-Path $StateDir "roots.txt"
 $SettingsFile = Join-Path $StateDir "router-node.json"
 
 if (-not (Test-Path $NodeExe) -or -not (Test-Path $RouterScript)) {
-  throw "CodasSol Router runtime is missing."
+  throw "Codas Router runtime is missing."
 }
-if (-not (Test-Path $RootsFile)) { throw "CodasSol Router roots file is missing: $RootsFile" }
+if (-not (Test-Path $RootsFile)) { throw "Codas Router roots file is missing: $RootsFile" }
 $Roots = ([string](Get-Content $RootsFile -Raw)).Trim()
-if ([string]::IsNullOrWhiteSpace($Roots)) { throw "CodasSol Router roots are empty." }
+if ([string]::IsNullOrWhiteSpace($Roots)) { throw "Codas Router roots are empty." }
 
 $env:CODASSOL_STATE_DIR = $StateDir
 $env:CODASSOL_LOCAL_DEVICE_ID = $env:COMPUTERNAME

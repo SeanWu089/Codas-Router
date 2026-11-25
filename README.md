@@ -1,12 +1,12 @@
 <div align="center">
 
-# CodasSol Router
+# Codas-Router
 
 ### **Route the Project, Not Devices.**
 
-**Give the order anywhere. CodasSol finds the machine that owns the workspace.**
+**Give the order anywhere. Codas finds the machine that owns the workspace.**
 
-[![Latest Release](https://img.shields.io/github/v/release/SeanWu089/CodasSol-Router?display_name=tag&logo=github)](https://github.com/SeanWu089/CodasSol-Router/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/SeanWu089/Codas-Router?display_name=tag&logo=github)](https://github.com/SeanWu089/Codas-Router/releases/latest)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-router-7C3AED)](https://modelcontextprotocol.io/)
@@ -15,9 +15,11 @@
 
 </div>
 
-> **Current codebase (2026-10-10):** The default branch includes the tested
-> **Device Registry v1**, **CodasSol-mac v0.3.2** menu-bar app, and Mac-side
-> workspace routing / wrong-device protections. These components were
+> **Current codebase (2026-11-23):** The default branch includes the tested
+> **Device Registry v1**, **Codas-mac v0.3.12** menu-bar app, and Mac-side
+> workspace routing / wrong-device protections. The Mac component now includes
+> matching device-dot ordering, fixed panel geometry and a verified exact-path
+> login installer. These components were
 > verified on macOS. The cross-network, **Mac-offline Windows v0.2** goal is
 > **still under development**: Windows can report an Agent heartbeat even
 > when its DevSpace cannot execute commands. Do not interpret a registered
@@ -25,13 +27,13 @@
 
 ---
 
-## What is CodasSol Router?
+## What is Codas-Router?
 
 Your files do not live on one computer.
 
 Your projects might be on a MacBook, a Windows desktop, a home server, a GPU box, or a machine you left at the office. Traditional remote access lets you *reach* those machines — but you still have to remember where the work lives, connect to the right host, and switch context yourself.
 
-CodasSol Router makes the **physical machine a routing detail**.
+Codas-Router makes the **physical machine a routing detail**.
 
 It sits in front of [DevSpace](https://www.npmjs.com/package/@waishnav/devspace) and exposes one MCP-facing entry point:
 
@@ -40,7 +42,7 @@ You / AI client
       |
       | one MCP endpoint
       v
-CodasSol Router
+Codas-Router
       |
       | "Where does this workspace live?"
       |
@@ -49,7 +51,7 @@ CodasSol Router
       +----> Windows Agent -----> DevSpace -----> C:\Users\...\project
 ```
 
-Open a Windows workspace from a conversation currently executing through a Mac Router, and CodasSol routes the call to Windows. After the workspace is opened, its `workspace_id` stays bound to that device, so later reads, edits, shell commands, and Git operations keep going back to the same machine automatically.
+Open a Windows workspace from a conversation currently executing through a Mac Router, and Codas routes the call to Windows. After the workspace is opened, its `workspace_id` stays bound to that device, so later reads, edits, shell commands, and Git operations keep going back to the same machine automatically.
 
 > **The AI should care about the workspace — not which box happens to hold it.**
 
@@ -78,7 +80,7 @@ and the path becomes:
 
 ```text
 AI client
-   -> CodasSol Router on Mac
+   -> Codas-Router on Mac
       -> C:\Users\...\Desktop resolves to Windows
          -> Windows Agent
             -> local DevSpace
@@ -91,11 +93,11 @@ No separate Windows MCP endpoint needs to be exposed to the client, and the remo
 
 ## Why build this on DevSpace?
 
-CodasSol does **not** try to replace DevSpace.
+Codas does **not** try to replace DevSpace.
 
-DevSpace is the execution backend: it owns local workspaces, filesystem operations, shell execution, coding-agent integrations, and local permission boundaries. CodasSol adds the missing **multi-device control plane** in front of it.
+DevSpace is the execution backend: it owns local workspaces, filesystem operations, shell execution, coding-agent integrations, and local permission boundaries. Codas adds the missing **multi-device control plane** in front of it.
 
-| Capability | DevSpace | CodasSol Router + DevSpace |
+| Capability | DevSpace | Codas-Router + DevSpace |
 | --- | :---: | :---: |
 | Local workspace / file / shell tools | ✅ | ✅ |
 | Local allowed-root boundary | ✅ | ✅ |
@@ -110,13 +112,13 @@ DevSpace is the execution backend: it owns local workspaces, filesystem operatio
 | Per-device enrollment credentials | — | **✅** |
 | Self-contained Windows Agent installer | — | **✅** |
 
-> **DevSpace decides how work happens on a machine. CodasSol decides which machine should receive the work.**
+> **DevSpace decides how work happens on a machine. Codas decides which machine should receive the work.**
 
 ---
 
 ## Routing model
 
-CodasSol V1 uses a small set of deterministic rules.
+Codas V1 uses a small set of deterministic rules.
 
 ### 1. Path chooses the device
 
@@ -135,7 +137,7 @@ An `open_workspace` call is matched with platform-aware path semantics. The most
 
 ### 2. Workspace identity becomes device affinity
 
-When DevSpace returns `workspace_id = ws_xxx`, CodasSol persists:
+When DevSpace returns `workspace_id = ws_xxx`, Codas persists:
 
 ```text
 ws_xxx -> device_id
@@ -145,7 +147,7 @@ Every later MCP call carrying that `workspace_id` returns to the same device.
 
 ### 3. Ambiguity fails closed
 
-CodasSol does not silently guess when:
+Codas does not silently guess when:
 
 - multiple devices are equally valid;
 - a bound device is offline;
@@ -168,17 +170,30 @@ Remote Agents connect **outbound** to the Router.
 
 ```mermaid
 flowchart LR
-    C[AI / MCP Client] --> R[CodasSol Router]
+    C[AI / MCP Client] --> R[Codas-Router]
     R --> M[Local DevSpace]
     W[Remote Agent] -->|outbound authenticated connection| R
     W --> D[Remote DevSpace on loopback]
 ```
 
-The remote computer does **not** need a public IP, inbound firewall rule, its own public MCP URL, or a second public tunnel just for CodasSol.
+The remote computer does **not** need a public IP, inbound firewall rule, its own public MCP URL, or a second public tunnel just for Codas.
 
 The Router creates a one-time enrollment boundary, then issues a separate long-lived token for that device. DevSpace OAuth stays local to each computer.
 
 ---
+
+## Project naming
+
+The repository and Node package are **Codas-Router** and `codas-router`.
+The product is **Codas** and the macOS menu application is **Codas-mac**.
+New source checkouts and release artifacts use these names.
+
+Existing installations keep their protocol and identity compatibility:
+`/_codassol/*`, `codassol_list_devices`, `CODASSOL_*`, `.codassol`,
+`com.codassol.*`, and existing Windows task/runtime names remain valid.
+These identifiers refer to saved credentials, running services and installed
+clients; renaming the project does not reset pairing or create duplicate jobs.
+Historical tags and dated deployment paths retain their original spelling.
 
 ## Quick start
 
@@ -187,8 +202,8 @@ The Router creates a one-time enrollment boundary, then issues a separate long-l
 Requirements: Node.js 22+ and an initialized local DevSpace.
 
 ```bash
-git clone https://github.com/SeanWu089/CodasSol-Router.git
-cd CodasSol-Router
+git clone https://github.com/SeanWu089/Codas-Router.git
+cd Codas-Router
 
 npm test
 ./scripts/mac/install-autostart.sh
@@ -204,7 +219,7 @@ npm run router:pairing-token --silent
 
 ### Windows Agent
 
-Download the latest **`CodasSol-Windows-Agent-*.zip`** from **[GitHub Releases →](https://github.com/SeanWu089/CodasSol-Router/releases/latest)**.
+Choose a release explicitly labeled **Windows** from **[GitHub Releases →](https://github.com/SeanWu089/Codas-Router/releases)** and use its listed asset. New source builds use `Codas-Windows-*` names; historical release assets retain their original names. The repository-wide latest release can belong to a different component.
 
 Then:
 
@@ -253,13 +268,13 @@ Read [`SECURITY.md`](SECURITY.md) before exposing a Router beyond a trusted netw
 
 ---
 
-## What CodasSol is — and is not
+## What Codas is — and is not
 
-**Not another remote desktop.** Remote desktop streams a screen and input. CodasSol routes structured agent/tool operations to the correct execution environment.
+**Not another remote desktop.** Remote desktop streams a screen and input. Codas routes structured agent/tool operations to the correct execution environment.
 
-**Not a VPN replacement.** VPNs solve private network reachability. CodasSol solves agent action routing and workspace affinity. They can complement each other.
+**Not a VPN replacement.** VPNs solve private network reachability. Codas solves agent action routing and workspace affinity. They can complement each other.
 
-**Not an AI model.** CodasSol does no inference. Bring the AI client/model you want; DevSpace remains the execution layer.
+**Not an AI model.** Codas does no inference. Bring the AI client/model you want; DevSpace remains the execution layer.
 
 **Not a hosted service.** The public repository is the framework. Device identities, credentials, paths, and bindings belong to your private deployment.
 
@@ -269,7 +284,7 @@ Read [`SECURITY.md`](SECURITY.md) before exposing a Router beyond a trusted netw
 
 There are already strong projects for multi-device agent execution, remote desktops, gateways, and self-hosted workers.
 
-CodasSol deliberately explores a smaller abstraction:
+Codas deliberately explores a smaller abstraction:
 
 ```text
 workspace identity
@@ -280,13 +295,13 @@ physical-machine affinity
 
 The user or model should not need to call `remote_exec(agent_id="windows-pc", ...)` for every operation. Once a workspace is resolved, normal DevSpace tools keep their normal shape. The Router carries the machine affinity.
 
-That makes CodasSol closer to a **transparent workspace router** than a remote-control dashboard.
+That makes Codas closer to a **transparent workspace router** than a remote-control dashboard.
 
 ---
 
 ## Releases
 
-### `v0.1.3` — current
+### `v0.1.3` — historical Windows Agent
 
 Public artifact hygiene. Installer examples use neutral placeholders rather
 than test-machine-looking usernames or addresses.
@@ -303,7 +318,7 @@ Fixed the first real multi-device integration issue: DevSpace `allowedRoots` and
 
 First self-contained Windows Agent bundle. Kept as a prerelease so the development history remains inspectable.
 
-See **[all Releases](https://github.com/SeanWu089/CodasSol-Router/releases)**.
+See **[all Releases](https://github.com/SeanWu089/Codas-Router/releases)**.
 
 ---
 
@@ -363,75 +378,108 @@ MIT.
 
 </div>
 
-## macOS menu bar controller (v0.3.2)
+## Codas-mac menu bar controller (v0.3.12)
 
-Build the native Swift/AppKit menu app with `zsh scripts/mac/menu-app/build.sh`
-(default destination: `~/Applications/CodasSol-mac.app`). Launch it from
-Finder or `open -a "$HOME/Applications/CodasSol-mac.app"`. It probes the local
-DevSpace (`127.0.0.1:7676/healthz`) and Router
-(`127.0.0.1:17676/_codassol/health`) independently. The managed DevSpace
-LaunchAgent is `com.codassol.devspace.mac`; the Stop action is enabled only
-after confirming the managed process actually owns the listener. DevSpace
-is discovered by its published `dist/cli.js` entrypoint, not a fragile npm
-shim. Installing the menu app does **not** restart the Router.
+**Codas-mac** is the native Swift/AppKit menu component, installed at
+`~/Applications/Codas-mac.app`. It keeps the existing blue Finder icon and the
+monochrome menu icon. The app and Router have independent version numbers and
+release cycles.
 
-The menu app status item uses a monochrome macOS template icon derived from the local `sean.PNG` avatar, bundled as `scripts/mac/menu-app/SeanTemplate.png`. For local upgrades, rebuild and relaunch the menu app; server restart is not required.
+### Changes in this version
 
-The installed macOS app is named **CodasSol-mac.app**, has a full-color avatar Finder icon derived from `sean.PNG`, and uses a 21-point monochrome template icon for the menu bar.
+- Remote-device dots and tooltip numbers follow the **Other Devices** row
+  order. Connected devices are green; offline, unknown and stale states are
+  grey. The local Mac is not counted as another remote dot.
+- The panel uses a stable 350 × 540 point layout, reduced when needed to fit
+  the active screen. Headers, Back and the footer stay outside scrolling
+  content, and navigation resets the content scroll position.
+- The menu closes on outside clicks or app deactivation while preserving
+  clicks inside the panel and attached confirmation windows.
+- Builds create a signed ZIP outside iCloud. No loose build application is
+  left for Spotlight to choose instead of the installed application.
+- Installer revision 2 verifies the canonical application and one exact-path
+  login launcher before optional legacy cleanup. Protected old copies are
+  reported separately and do not undo a working installation. Rollback
+  preserves whole directories instead of deleting and extracting over them.
 
-### CodasSol-mac v0.3 device panel (preview)
+The user accepted the installed 0.3.12 interface. Automated checks cover
+ordering, freshness, scrolling, layout and installer failure recovery.
+Physical reboot acceptance remains a separate check; a successful source
+build alone does not establish that result.
 
-The native menu-bar icon opens a compact SwiftUI device panel: local Mac first,
-then any registered peer/Agent devices, with detail pages, rename and local
-DevSpace management controls. No Electron, full Xcode, or web runtime required.
-The status bar continues to use the **black-and-white Sean template**; the
-Finder app icon retains the existing **blue Sean icon**.
+### Build, package and install
 
-`scripts/mac/menu-app/DeviceDirectoryClient.swift` reads the authenticated
-Device Registry v1 API (`/_codassol/devices`) from **loopback only**, taking
-the local admin bearer from the private `~/.codassol/router.json` state file.
-It never forwards this token to remote devices. Until Registry v1 is deployed,
-the UI falls back to **actual local Router Agent and Peer registrations** in
-the private state and peers files, marking their state **Unknown** (legacy
-registrations have no reliable recent heartbeat data) and disabling remote rename. The local
-Router and DevSpace statuses are still probed live. With Registry v1 installed,
-local-first status and authenticated rename become available without replacing
-the menu UI. No production Router restart or protocol migration is required
-to install the UI preview.
+Use macOS with Apple command line tools (`swiftc`), Python 3 and Node.js 22+.
+Run the regression checks and build from this repository:
 
-`npm run test:mac` now exercises a mock authenticated Registry Router, device
-listing and rename, legacy 404, wrong credentials, and saved legacy records,
-in addition to existing macOS LaunchAgent and migration regression checks.
-The real Mac/Windows multi-node Registry deployment and login-reboot test
-remain separate, potentially disruptive integration stages.
+```sh
+npm test
+npm run test:mac
+zsh scripts/mac/menu-app/build.sh
+```
 
-**v0.3.1 polish:** The normal device list does not show Registry deployment or
-developer diagnostic messages. Previously enrolled Agent and configured Peer
-records both appear; an unregistered phone does not. Legacy detail names are
-read-only instead of offering a save button that could not succeed. The Stop
-button is only available after confirming the managed LaunchAgent PID matches
-the actual TCP/7676 listening process, not merely a loaded service definition.
+The build produces `dist/Codas-mac-0.3.12.zip`. It stages the app without
+installing it. Inspect a candidate-only installation plan with:
 
-**v0.3.2 status safety:** A registered Windows Agent can be heartbeat-online
-without being remotely executable. Such devices show amber **Agent online**
-and **Execution: Not verified**, not green **Connected**. A remote Router's
-healthy backend is also insufficient proof of actual command execution.
-The related Registry API correction is committed but still requires a
-separately controlled Router runtime upgrade.
+```sh
+python3 scripts/mac/menu-app/install-menu.py --source dist/Codas-mac-0.3.12.zip --plan
+```
 
-### CodasSol-mac v0.2 (pre-migration)
+To install from a locally authorized terminal, replace `--plan` with `--apply`.
+The installer writes `~/Library/LaunchAgents/com.codas.mac.menu.plist`, which
+launches `~/Applications/Codas-mac.app` through the bundled native helper.
+It verifies the actual running path, one application instance and same-PID
+reuse. Installing the menu component does not restart Router or DevSpace.
 
-Build the isolated preview with `zsh scripts/mac/menu-app/build.sh /tmp/CodasSol-mac-preview.app`, then run `npm run test:mac` on macOS. The tests include a mock LaunchAgent start/stop cycle under a path containing spaces, using an isolated job label (never the production service). The `.app` bundles its own icons and the `devspace-runner.zsh` helper; it does not require the original `sean.PNG` on the Desktop.
+For a transferable installer folder:
 
-The new **Check startup configuration** menu command validates the DevSpace package, a Node.js >=22 interpreter, and a live `--version` invocation without restarting any service. The stable runner locates `@waishnav/devspace/dist/cli.js` instead of trusting the npm-generated `devspace` shim (which previously broke on Windows), and searches fnm, nvm, Volta, and conventional global installation locations. Failed checks report a useful error rather than starting an unrelated executable. Tests cover moved packages, missing CLI files or transitive runtime dependencies, missing or incompatible Node installations, and wrong package identity. An existing listener on DevSpace's port 7676 blocks new starts even if the HTTP health check is unavailable.
+```sh
+python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.12.zip --output dist/Codas-mac-0.3.12-installer
+```
 
-After a **separately approved migration** from externally started DevSpace, CodasSol-mac installs its managed helper at `~/Library/Application Support/CodasSol-mac/devspace-runner.zsh`, with `com.codassol.devspace.mac` as a user LaunchAgent. That helper is independent of the location of the `.app` bundle. `RunAtLoad` restores the managed service at next login; stopping the managed job uses `launchctl bootout` instead of killing arbitrary processes. The Router remains its own independent LaunchAgent. **No code in the GUI automatically terminates externally started DevSpace.** An entirely deleted/broken DevSpace package or missing Node still needs repair; fallback discovery cannot recreate missing runtime files.
+The folder contains the signed app ZIP, the installer, its double-clickable
+`Install-Codas-mac.command` and generic checksum/settings files. It contains
+no developer-machine paths, installation logs, credentials or device records.
+The app is ad-hoc signed for integrity checking; it is not Developer ID signed
+or notarized. macOS security prompts for a downloaded build remain applicable.
 
-### Safe cutover and recovery (macOS)
+### Connection and usage display
 
-CodasSol-mac v0.2.0 includes a self-contained, launchd-run migration worker (`scripts/mac/menu-app/migrate-devspace.py`). Its `prepare` command checks that the current port 7676 listener belongs to a recognized DevSpace process, verifies Node and DevSpace runtime paths, and stages a managed service, an *inactive* legacy rescue configuration, and a second independent watchdog. Only after explicit warning/approval should `schedule` be called; it registers the watchdog first, then launches the migration worker independently of the DevSpace/MCP session. The worker sends SIGTERM only to the previously validated DevSpace PID, waits for the listener to release port 7676, starts the new LaunchAgent, and validates **both** DevSpace HTTP health and Router backend reachability. Failure attempts to unload the new service and start a rescue LaunchAgent using the previous invocation; the watchdog independently checks for stranded migrations. On successful cutover, the rescue configuration remains inactive and is not loaded at login. Status is retained in `~/Library/Application Support/CodasSol-mac/migration-state.json` and diagnostic logs are in `~/Library/Logs/`.
+The local row reflects independent loopback Router/DevSpace health. Remote
+connection state and actual command execution verification remain distinct.
+Device state expires after 20 seconds; registered devices stay listed when
+refresh fails. Outbound probes appear in Connection details and do not dim
+an otherwise usable menu icon.
 
-**2026-10-09 physical-Mac result:** migration status `success`; managed DevSpace LaunchAgent `com.codassol.devspace.mac` runs PID 6791 and both endpoints return healthy. The previous externally started PID 1933 was replaced. A real stop/start test through the menu (which intentionally disconnects the MCP session) remains a separate step; the isolated LaunchAgent start/stop regression test passed without touching the production listener. A clean login/reboot verification is also outstanding. **Never perform a destructive live start/stop test without notifying the user.**
+The usage summary refreshes every two seconds. Its authenticated loopback API
+provides HTTPS request counts, payload bytes, transfer rates, category totals
+and the last 100 sanitized request records. No raw URLs, query strings,
+request/response bodies or credentials are retained. Counts include health
+and protocol traffic, exclude HTTP headers/TLS overhead and edge-rejected
+requests, and are not provider billing totals. Up to five seconds of recent
+counts can be lost after an abrupt Router exit. Older Routers without this
+API show “Usage unavailable”; updating that backend is a separate deployment.
+
+The device client reads the local admin state from `~/.codassol/router.json`
+and uses `/_codassol/devices` on loopback only. Older Router installations
+have a metadata-only fallback that does not invent online states or offer
+unsupported renames. A healthy peer heartbeat does not prove remote command
+execution.
+
+### Existing DevSpace installations
+
+The separate managed DevSpace service keeps its existing identity
+`com.codassol.devspace.mac` and compatibility support directory
+`~/Library/Application Support/CodasSol-mac`. The menu validates that the
+managed PID owns the listener before offering Stop; it does not terminate
+an unrelated externally started DevSpace process.
+
+`scripts/mac/menu-app/migrate-devspace.py` is the existing explicit DevSpace
+migration worker. It validates the runtime and listener, stages an inactive
+rescue job and independent watchdog, and verifies both health endpoints after
+a controlled switch. That operation can interrupt the connection and is not
+part of a normal menu update. Full physical login/reboot and real service
+Stop/Start acceptance remain separate from isolated regression tests.
 
 
 ## macOS production releases (iCloud-safe)
@@ -460,7 +508,7 @@ python3 "$HOME/Library/Application Support/CodasSol/production/bin/promote-stabl
 
 `--dry-run` checks iCloud placeholders, stages Router release inputs, and runs Node syntax/unit tests without switching the active release or restarting a service. After explicit deployment authorization, invoking the helper with the reviewed source directory creates an immutable versioned release, atomically switches `current`, restarts **only** the Router via an independent worker, and checks local and public HTTPS health. Failed checks automatically roll back to the former release. The menu app has its own build/install flow; its UI-only image is intentionally excluded from Router release bundles. Do not replace the production runtime from Desktop by hand.
 
-**Source-sync limitation:** the live runtime has additional routing/SSE/traffic modules that have not yet been reconciled into this branch. Passing these tests does not make this checkout a whole-runtime replacement. Reconcile those modules before general promotion. Sleep/wake, reboot, and physical Windows acceptance remain pending in `docs/todos.md`.
+**Deployment boundary:** source reconciliation and local regression tests do not authorize a live runtime replacement. Sleep/wake, reboot, and physical Windows acceptance remain separate.
 
 The helper serializes activation and recovery with a persistent process lock.
 It rejects symbolic links in release inputs and staged copies before executing
@@ -481,3 +529,7 @@ Run the portable release-helper tests without contacting or changing production:
 ~~~sh
 python3 -B -m unittest discover -s scripts/mac/production -p 'test_*.py' -v
 ~~~
+
+## Codas Android — integrated Flutter UI
+
+The Android Preview.9 / build 10 UI is in [mobile/flutter](mobile/flutter/README.md). It uses the canonical native wireless Agent in [mobile/android](mobile/android/README.md), including its existing access switch, permission gates and user-confirmed APK workflow. The native UI remains a recovery build path. The shared app package and pairing compatibility identifiers are intentionally preserved.

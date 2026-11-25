@@ -1,5 +1,15 @@
 # Findings
 
+## 2026-11-23 — Codas naming and Mac 0.3.12
+
+- The project is Codas-Router, the product is Codas and the menu component is Codas-mac. Existing protocol, credential-directory and service identities remain compatible; a branding change must not create a second installation identity or discard pairing.
+- The observed old-menu recurrence was caused by launching a discoverable backup application. ZIP-only build output and an exact-path native login launcher address selection ambiguity. Historical application copies still need explicit, authorized retirement; a loaded startup job is not a physical reboot test.
+- Menu dots independently sorted opaque device IDs while the panel retained directory order. Both now preserve the same remote-device sequence, including tooltip numbering and stale-state handling.
+- Legacy-copy retirement can fail with EPERM. Installer revision 2 verifies and commits canonical installation first, then archives and atomically renames optional old copies. Deferred cleanup does not roll back a working new app. Whole-directory holdings preserve rollback without recursive old-app deletion.
+- Building a loose application inside an iCloud directory can reintroduce FinderInfo metadata and fail signing. Build and signature verification now happen in a physical temporary directory; only the archive is published.
+- The panel-layout fixture uses an isolated authenticated loopback server because global URLProtocol registration does not reliably intercept ephemeral URLSession. The fixture lives outside Node's automatic test-discovery directory.
+- Public release settings are generated without developer-machine paths, device metadata or installation logs. Explicit legacy paths are provided locally by the installer operator. Historical local diagnostic commits are not part of the public publication checkpoint.
+
 ## 2026-10-28 — Active runtime source reconciliation
 
 - Compared all 22 active production JavaScript modules against integrated source. Recovered nine differing/new modules covering SSE task delivery/deadlines, scoped heartbeat TTL, installation-preserving enrollment, peer diagnostics/TLS address pins, and sanitized traffic accounting. Excluded three historical backup files. No runtime state, secrets or fixed deployment endpoints were copied.
@@ -177,3 +187,9 @@ Reason: ngrok free quota exceeded; Sean purchased example.com and configured Clo
 - Review found an untested callback race: checking a stream ID before closing a global connection snapshot was not atomic; stale heartbeat errors could overwrite replacement status. Preview.6 uses a stream-specific handle and one synchronization boundary for ready/ACK/failure publication, and disconnects only the captured SSE. A controlled stale/interleaving regression failed before the fix and passes after it. Build/lint and JVM checks pass; updated APK still awaits wireless installation.
 
 - Final Preview.6 observation: five public locked requests over 180 seconds returned four successes and one 45-second timeout, followed by automatic recovery. An independent local-entry request to the still-wireless locked phone returned in about one second. User confirmed the homepage recovered to connected, then off/on cycle; off returned DEVICE_OFFLINE after detection lag, fresh on request succeeded at version 7. Preserve public-network instability as unresolved; do not claim uninterrupted availability or reproduce old queued mutations as physically proven. Wireless self-update was user-confirmed and temporary hosting terminated.
+
+## 2026-11-25 — Android Preview.9 integration
+
+The integrated Flutter UI reuses the canonical native Agent service and existing Android permission and confirmation boundaries. Preview.9 uses versionCode 10; the higher-version native recovery artifact is separate. The merge retains the Mac 0.3.12 UI and both platform regression suites. Intermittent network timeouts and extended physical-device acceptance remain open. No production deployment is part of source integration.
+
+Local integration verification: 84 Node tests, 26 isolated production-helper tests, the Mac regression suite, 23 native protocol checks, stream callback isolation, Flutter analysis and three Flutter tests passed. A fresh release APK built successfully and reported the expected package and versionCode 10. These checks do not establish extended physical-device acceptance.

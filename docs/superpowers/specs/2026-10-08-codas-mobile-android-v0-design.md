@@ -1,8 +1,8 @@
-# CodasSol Mobile Android V0 Design
+# Codas Mobile Android V0 Design
 
 ## Goal
 
-Build a lightweight native Android control client for CodasSol that runs on the user's RedMagic phone and talks to the existing CodasSol Router.
+Build a lightweight native Android control client for Codas that runs on an Android phone and talks to the existing Codas-Router.
 
 The mobile app is a **control surface**, not an execution node. DevSpace, Node.js, workspace access, and code execution remain on Mac/Windows machines.
 
@@ -17,7 +17,7 @@ The phone should be able to issue requests and inspect Router status without kno
 V0 intentionally does only the minimum needed to prove the mobile path end to end:
 
 1. Launch a native Android app.
-2. Connect to CodasSol Router.
+2. Connect to Codas-Router.
 3. Call `GET /_codassol/health`.
 4. Display:
    - Router connection state;
@@ -43,7 +43,7 @@ V0 intentionally does only the minimum needed to prove the mobile path end to en
 
 For the first real-device test, USB debugging plus Android Debug Bridge is used.
 
-The Mac keeps CodasSol Router on loopback. During USB testing:
+The Mac keeps Codas-Router on loopback. During USB testing:
 
 ```
 adb reverse tcp:17676 tcp:17676
@@ -94,7 +94,7 @@ V0 is considered proven only when all of the following pass on the physical RedM
 4. APK installs through ADB.
 5. App launches through ADB.
 6. USB reverse tunnel is active.
-7. App receives a valid CodasSol health response.
+7. App receives a valid Codas health response.
 8. App shows Connected when healthy.
 9. Stopping/removing Router connectivity causes the app to show Disconnected/Error.
 10. Restoring connectivity and retrying returns to Connected.

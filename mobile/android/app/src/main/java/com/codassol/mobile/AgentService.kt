@@ -222,7 +222,7 @@ class AgentService : Service() {
     private fun notification(text: String): Notification {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, AgentService::class.java).setAction(STOP), PendingIntent.FLAG_IMMUTABLE)
-        return Notification.Builder(this, "codas-access").setSmallIcon(R.drawable.ic_codassol)
+        return Notification.Builder(this, "codas-access").setSmallIcon(R.drawable.ic_codas)
             .setContentTitle("Codas 手机访问已开启").setContentText(text).setContentIntent(open).setOngoing(true)
             .addAction(Notification.Action.Builder(null, "关闭访问", stop).build()).build()
     }

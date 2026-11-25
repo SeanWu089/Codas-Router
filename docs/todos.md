@@ -1,5 +1,15 @@
 # Todos
 
+## 2026-11-23 — Codas-Router and Mac release
+
+- [x] Unify current repository, package, display and release-artifact naming as Codas / Codas-Router / Codas-mac, retaining required installation/protocol compatibility identifiers.
+- [x] Integrate the complete Mac 0.3.12 source, stable layout, matching device-dot order, ZIP-only build, exact-path login launcher and recoverable installer.
+- [x] Add generic portable installer packaging and include focused menu regressions in the standard Mac test command.
+- [x] Verify the final source locally: 50 Node tests, the full native Mac suite, 24 offscreen dot renders, eight installer-fault cases, six migration cases, signed build and portable installer --plan. The release PR/main workflow supplies the additional hosted CI record.
+- [x] MACUI-04 / MACUI-05 — User accepted the installed rename and current visible device-order repair. This does not imply additional physical service or reboot scenarios were performed.
+- [ ] MACUI-03 — After a natural login/reboot, verify exactly one Codas-mac application at ~/Applications/Codas-mac.app and correct device order. Preserve the earlier recurrence report until this check is accepted.
+- [ ] MACCLEAN-01 — Resolve any cleanup_deferred entries from a local install through authorized access. Preserve verified backup archives; do not claim every historical application is retired when a rename or LaunchServices cleanup was denied.
+
 ## 2026-10-28 — Reconciled runtime baseline
 
 - [x] Read production source directly with local tools; expanding connector allowed roots is unnecessary. Recover active runtime modules onto the PR #1 baseline and verify regressions (80 Node, 26 Python).
@@ -203,3 +213,10 @@ real deployment identities and addresses in accordance with `SECURITY.md`.
 - [ ] AND-05 / AND-07 extended physical network-switch/endurance acceptance remains open. A controlled short cellular interruption recovered automatically with original network settings restored, but no long-duration or reboot acceptance is claimed.
 - [x] Source checks — 84 Node / 26 Python release-helper tests, Android build/lint, 23 JVM protocol assertions, four access-session assertions and controlled stream-callback race tests passed. CI also runs pure protocol and stream checks.
 - Integration is authorized for this accepted preview checkpoint; retain intermittent public-network timeout as an unresolved limitation. Main promotion and distributed coordinator takeover remain outside scope.
+
+## 2026-11-25 — Android stable-source integration
+
+- [x] Preserve the accepted Flutter UI and native recovery source as a Git checkpoint; exclude generated build output and private diagnostics.
+- [ ] AND-UI-01: Verify integrated Preview.9 visual state, fresh remote info, switch-off and reconnect on the actual phone. Earlier physical info and installation evidence remains valid, not an extended stability guarantee.
+- [ ] AND-UI-02: Verify user-mediated system permission and APK confirmation flows on the actual phone.
+- [ ] AND-05 / AND-07: Extended network-switch and background reliability remain separate physical acceptance checks.

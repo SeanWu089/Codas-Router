@@ -1,4 +1,4 @@
-# CodasSol Device Panel — cross-platform UX concept
+# Codas Device Panel — cross-platform UX concept
 
 ## Goal
 
@@ -18,7 +18,7 @@ offline. A stale or unknown status must never be rendered as online.
 The default view is a small native panel, not a full app window:
 
 ```text
-  CodasSol                          ↻
+  Codas                          ↻
   YOUR DEVICE
   ● Sean's Mac                       Connected ›
 
