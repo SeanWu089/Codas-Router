@@ -1,5 +1,5 @@
 <resources>
-    <color name="background">#F7F7F5</color>
+    <color name="background">#F6F6F2</color>
     <color name="surface">#FFFFFF</color>
     <color name="ink">#171717</color>
     <color name="muted">#737373</color>

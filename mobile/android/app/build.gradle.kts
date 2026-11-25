@@ -12,8 +12,8 @@ android {
         minSdk = 30
         targetSdk = 35
         testInstrumentationRunner = "com.codassol.mobile.PhoneInstrumentation"
-        versionCode = 7
-        versionName = "0.1.0-wireless-preview.6"
+        versionCode = providers.gradleProperty("codasVersionCode").orNull?.toInt() ?: 9
+        versionName = providers.gradleProperty("codasVersionName").orNull ?: "0.1.0-wireless-preview.8"
     }
 
     buildTypes {
