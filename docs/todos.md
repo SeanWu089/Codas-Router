@@ -213,3 +213,10 @@ real deployment identities and addresses in accordance with `SECURITY.md`.
 - [ ] AND-05 / AND-07 extended physical network-switch/endurance acceptance remains open. A controlled short cellular interruption recovered automatically with original network settings restored, but no long-duration or reboot acceptance is claimed.
 - [x] Source checks — 84 Node / 26 Python release-helper tests, Android build/lint, 23 JVM protocol assertions, four access-session assertions and controlled stream-callback race tests passed. CI also runs pure protocol and stream checks.
 - Integration is authorized for this accepted preview checkpoint; retain intermittent public-network timeout as an unresolved limitation. Main promotion and distributed coordinator takeover remain outside scope.
+
+## 2026-11-25 — Android stable-source integration
+
+- [x] Preserve the accepted Flutter UI and native recovery source as a Git checkpoint; exclude generated build output and private diagnostics.
+- [ ] AND-UI-01: Verify integrated Preview.9 visual state, fresh remote info, switch-off and reconnect on the actual phone. Earlier physical info and installation evidence remains valid, not an extended stability guarantee.
+- [ ] AND-UI-02: Verify user-mediated system permission and APK confirmation flows on the actual phone.
+- [ ] AND-05 / AND-07: Extended network-switch and background reliability remain separate physical acceptance checks.

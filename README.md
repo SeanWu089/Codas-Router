@@ -529,3 +529,7 @@ Run the portable release-helper tests without contacting or changing production:
 ~~~sh
 python3 -B -m unittest discover -s scripts/mac/production -p 'test_*.py' -v
 ~~~
+
+## Codas Android — integrated Flutter UI
+
+The Android Preview.9 / build 10 UI is in [mobile/flutter](mobile/flutter/README.md). It uses the canonical native wireless Agent in [mobile/android](mobile/android/README.md), including its existing access switch, permission gates and user-confirmed APK workflow. The native UI remains a recovery build path. The shared app package and pairing compatibility identifiers are intentionally preserved.

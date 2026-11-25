@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Codas PEER icon">
+<title>Codas PEER</title>
+<rect x="2" y="2" width="116" height="116" rx="27" fill="#191a18"/>
+<g fill="#f4f4ef">
+<circle cx="60" cy="27" r="10"/>
+<circle cx="25" cy="87" r="10"/>
+<circle cx="48.3" cy="47" r="4"/>
+<circle cx="36.7" cy="67" r="4"/>
+<circle cx="48.3" cy="87" r="4"/>
+<circle cx="71.7" cy="87" r="4"/>
+<circle cx="71.7" cy="47" r="4"/>
+<circle cx="83.3" cy="67" r="4"/>
+</g>
+<circle cx="95" cy="87" r="10" fill="#e23930"/>
+</svg>

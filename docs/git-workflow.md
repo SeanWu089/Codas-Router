@@ -90,3 +90,7 @@ The active macOS Router executes from `~/Library/Application Support/CodasSol/pr
 3. The Mac Router already runs Registry v1, but its un-deployed tri-state Agent-backend status API fix still needs a guarded maintenance window. Windows Registry, peer synchronization and actual execution remain pending.
 
 **Deployment update (2026-10-10):** The Mac Router has now been upgraded to Registry v1 and verified locally, while Windows Router deployment and physical peer synchronization remain pending. The Mac compatibility adjustments (legacy Windows D:/E: handling and peer MCP header forwarding) have been preserved in source through `fix/device-routing-v0.2`. Merging that source does **not** redeploy the live Router; its tri-state Agent backend reporting update still needs guarded deployment. See [Mac Registry cutover notes](deployments/2026-10-10-mac-device-registry-v1.md) before replacing the live runtime again.
+
+## 2026-11-25 — Android integration checkpoint
+
+The Android Flutter UI and native recovery source are integrated with the published Mac release baseline on a dedicated review branch. Preserve the Android worktree's local acceptance notes and build artifacts, and all unfinished Windows and Mac repair worktrees. Only remove a worktree after verifying committed ancestry, clean tracked/untracked state, and absence of active work. Do not prune unreadable worktrees or alter production.
