@@ -9,10 +9,11 @@ android {
 
     defaultConfig {
         applicationId = "com.codassol.mobile"
-        minSdk = 26
+        minSdk = 30
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.0.1"
+        testInstrumentationRunner = "com.codassol.mobile.PhoneInstrumentation"
+        versionCode = providers.gradleProperty("codasVersionCode").orNull?.toInt() ?: 9
+        versionName = providers.gradleProperty("codasVersionName").orNull ?: "0.1.0-wireless-preview.8"
     }
 
     buildTypes {

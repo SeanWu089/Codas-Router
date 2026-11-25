@@ -480,3 +480,56 @@ rescue job and independent watchdog, and verifies both health endpoints after
 a controlled switch. That operation can interrupt the connection and is not
 part of a normal menu update. Full physical login/reboot and real service
 Stop/Start acceptance remain separate from isolated regression tests.
+
+
+## macOS production releases (iCloud-safe)
+
+- **Development checkout:** <development-checkout> (may be under iCloud Desktop sync; not a production execution source).
+- **Active Router release:** ~/Library/Application Support/CodasSol/production/current -> releases/<id>.
+- **Production entrypoints:** `production/bin/{router-runner.zsh,devspace-runner.zsh,cloudflare-ingress-runner.zsh}`. Separate LaunchAgents run these cloud-independent helpers; the legacy ngrok configuration is retained only for local recovery.
+- **Configuration/state and secrets:** ~/.codassol (not replaced or bundled by a release).
+- **Dependencies:** DevSpace, Node, cloudflared, and the independently installed native menu application remain outside the iCloud Desktop. Set `CODASSOL_NODE` to a durable Node.js 22+ executable when the default runtime path does not apply.
+- **Backups and logs:** production/backups, production/logs. Preserve the previous ~/.local/share/codassol-router copy until the release process is proven across reboot.
+
+Private deployment configuration belongs in the local launcher environment:
+
+- `CODASSOL_SOURCE_DIR`: the reviewed development checkout to stage.
+- `CODASSOL_PUBLIC_HEALTH_URL`: the deployment's HTTPS `/_codassol/health` endpoint. Required before promotion; there is no embedded private address.
+- `CODASSOL_CLOUDFLARED_BIN`: optional explicit cloudflared executable.
+- `CODASSOL_CLOUDFLARE_TOKEN_FILE`: optional credential-file path; defaults to `~/.codassol/cloudflare-codas.token`. Never put the credential contents in Git or command arguments.
+- `CODASSOL_TUNNEL_DNS_RESOLVER`: optional tunnel-only resolver address and port when the existing system resolver cannot resolve the tunnel service. The default uses system DNS; this setting does not alter system network configuration.
+
+Review commands after installing the helpers in the production `bin` directory:
+
+~~~sh
+python3 "$HOME/Library/Application Support/CodasSol/production/bin/promote-stable.py" --status
+python3 "$HOME/Library/Application Support/CodasSol/production/bin/promote-stable.py" --dry-run "$CODASSOL_SOURCE_DIR"
+~~~
+
+`--dry-run` checks iCloud placeholders, stages Router release inputs, and runs Node syntax/unit tests without switching the active release or restarting a service. After explicit deployment authorization, invoking the helper with the reviewed source directory creates an immutable versioned release, atomically switches `current`, restarts **only** the Router via an independent worker, and checks local and public HTTPS health. Failed checks automatically roll back to the former release. The menu app has its own build/install flow; its UI-only image is intentionally excluded from Router release bundles. Do not replace the production runtime from Desktop by hand.
+
+**Deployment boundary:** source reconciliation and local regression tests do not authorize a live runtime replacement. Sleep/wake, reboot, and physical Windows acceptance remain separate.
+
+The helper serializes activation and recovery with a persistent process lock.
+It rejects symbolic links in release inputs and staged copies before executing
+candidate code. A durable journal records the previous and candidate releases
+before switching `current`; rollback refuses to overwrite an unrelated change.
+Detected failures and catchable interruptions attempt rollback immediately.
+
+If a worker is killed or the operating system is interrupted, the journal
+remains for the next recovery attempt; this is not an independent watchdog and
+does not promise immediate recovery while no helper is running. The next
+activation first recovers a pending transaction. In an authorized maintenance
+window, `promote-stable.py --recover` performs that recovery explicitly, and may
+restart the Router. `--status` reports whether recovery is pending. Recovery
+failures retain the journal and block a new activation until resolved.
+
+Run the portable release-helper tests without contacting or changing production:
+
+~~~sh
+python3 -B -m unittest discover -s scripts/mac/production -p 'test_*.py' -v
+~~~
+
+## Codas Android — integrated Flutter UI
+
+The Android Preview.9 / build 10 UI is in [mobile/flutter](mobile/flutter/README.md). It uses the canonical native wireless Agent in [mobile/android](mobile/android/README.md), including its existing access switch, permission gates and user-confirmed APK workflow. The native UI remains a recovery build path. The shared app package and pairing compatibility identifiers are intentionally preserved.

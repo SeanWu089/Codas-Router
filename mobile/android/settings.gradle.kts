@@ -16,3 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "CodasMobile"
 include(":app")
+
+include(":fixture")
