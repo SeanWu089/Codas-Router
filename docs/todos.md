@@ -220,3 +220,10 @@ real deployment identities and addresses in accordance with `SECURITY.md`.
 - [ ] AND-UI-01: Verify integrated Preview.9 visual state, fresh remote info, switch-off and reconnect on the actual phone. Earlier physical info and installation evidence remains valid, not an extended stability guarantee.
 - [ ] AND-UI-02: Verify user-mediated system permission and APK confirmation flows on the actual phone.
 - [ ] AND-05 / AND-07: Extended network-switch and background reliability remain separate physical acceptance checks.
+
+## Core display v1 acceptance
+
+- [x] Add bounded local hardware detection and optional v1 SSE display metadata; existing identity/lease fields unchanged.
+- [x] Run isolated production-baseline regression and deployment dry-run; 88 Node tests passed.
+- [ ] Review public feature-branch CI and integrate through develop; do not replace production-only runtime modules.
+- [ ] Verify actual deployed Core/Windows client displays the correct device after reconnect and clears stale metadata after disconnect. Existing peers must continue connecting without re-pairing.

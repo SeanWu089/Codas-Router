@@ -93,3 +93,7 @@ Security audit showed remote shell commands run with Sean's account permissions 
 ## 2026-10-28 — Distributed phone-node scope
 
 The user's longer-term direction is a distributed Codas network with a replaceable active entry/coordinator among online computers, rather than a permanently required personal computer. The confirmed current stage is a wireless Android execution/test node using the existing ingress, with compilation on a computer/cloud and an explicit phone access switch. Automatic coordinator selection/failover and distributed project-state synchronization remain deferred ideas, not part of this Android preview.
+
+## Core device display v1 — accepted direction
+
+Use one optional display-only metadata contract in the existing authenticated SSE handshake, rather than requiring every device to update together. Preserve old consumers and coordinators; never infer hardware form factor from the device's display name. Future unsupported form factors can be added independently of authorization and routing.

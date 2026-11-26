@@ -8,6 +8,7 @@ import { RoutingPolicy } from "./routing-policy.js";
 import { WorkspaceBindingStore } from "./workspace-bindings.js";
 import { PeerMesh } from "./peer-mesh.js";
 import { createRouterPeerOAuth } from "./router-peer-oauth.js";
+import { localHardwareFormFactor } from "./core-device-info.js";
 
 export async function createRouterRuntime(config, {
   clock = () => Date.now(),
@@ -66,6 +67,7 @@ export async function createRouterRuntime(config, {
     routing: new RoutingPolicy({ devices, bindings }),
     agentHub: new AgentHub(),
     localDeviceId: config.localDeviceId || "local",
+    localFormFactor: await localHardwareFormFactor(),
     peerOAuth: await createRouterPeerOAuth(config, stateDir)
   };
   runtime.peerMesh = await PeerMesh.load(runtime, config);

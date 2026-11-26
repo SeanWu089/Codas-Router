@@ -11,6 +11,7 @@ import {
   rewriteMcpRequest
 } from "./mcp-routing.js";
 import { createRouterRuntime } from "./runtime.js";
+import { coreDeviceInfo } from "./core-device-info.js";
 import { addRouterTools, deviceSnapshot } from "./mcp-device-tools.js";
 import { peerConnectivity } from "./peer-diagnostics.js";
 import { AGENT_SSE_PRESENCE_TTL_MS } from "./agent-timing.js";
@@ -500,6 +501,7 @@ async function handleAgentRoute(req, res, runtime) {
     });
     res.flushHeaders();
     sendEvent("ready", { deviceId: identity.id, protocol: 1, serverTime: Date.now(),
+      coreDevice: coreDeviceInfo(runtime),
       ...(leased ? { streamId: unsubscribe.streamId, leaseMs, heartbeatIntervalMs: 20_000 } : {}) });
     const keepalive = setInterval(() => {
       if (leased && runtime.agentHub.expireStream(identity.id)) return;
