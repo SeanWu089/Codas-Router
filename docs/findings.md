@@ -201,3 +201,13 @@ The authenticated SSE ready event retains protocol 1 and its existing identity/l
 ## 2026-11-26 — Identity and Core display integration
 
 The tested identity reference and backward-compatible Core display metadata have been combined in an isolated source baseline. The complete Node regression passed 96 tests (including identity proof, persistent POSIX reference storage and display compatibility). Identity is still a reference module: no enrollment endpoint, live migration or authorization behavior has changed. Protected native key storage, persistent coordinator identity mapping, authorized migration and lifecycle integration remain separate gates. Windows builds remain independent of reference-module development.
+
+## 2026-11-26 — Identity Registry V1 reference
+
+RC7 remains the accepted Windows connection/visual baseline: cloud installer gates passed, the additive Core display protocol was deployed, the actual installed Windows Agent reported RC7, and remote workspace access, create/read/edit/delete and command polling passed. The user confirmed the connection and approved the visual result. Extended uptime, network switching and sleep/recovery remain separate physical acceptance work.
+
+The independent registry reference introduces a stable network ID, immutable one-to-one route/public-key bindings and atomic revisions using SQLite transactions. Explicit initialization, expected-network validation, schema and integrity checks, private-directory checks, file replacement detection, duplicate binding rejection, multi-process serialization, and abrupt process-death rollback/durability were exercised. Existing legacy grant bytes, credentials and routes were unchanged in an isolated compatibility fixture. This is not a production authorization database; SQLite uses the experimental built-in Node 22 API and the filesystem safety adapter is POSIX-only. A Windows coordinator requires its own protected storage adapter.
+
+Migration cannot be enabled while shared-pairing registration can replace an existing route's token. Before integration, block unauthorized replacement and implement a unified transaction authority for active grant generation, local/administrator authorization, challenge scope and identity binding. Proof alone does not authorize access or rejoin. Production remains unchanged by this reference.
+
+Validation: 16/16 registry tests passed in three repeated runs; complete isolated Node regression 112/112. No skipped tests on the POSIX test host.

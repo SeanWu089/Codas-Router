@@ -101,3 +101,8 @@ Use one optional display-only metadata contract in the existing authenticated SS
 ## 2026-11-26 — Release and identity development tracks
 
 Keep the validated release path independent of the next identity/lifecycle architecture. Complete existing candidate acceptance without speculative protocol changes. For Identity V1, establish one versioned wire contract, a durable coordinator identity registry and explicit legacy binding rules; verify portable cryptographic vectors and platform-protected keys. Only then introduce enrollment, renewal and revocation APIs with administrative approval and local consent. The lifecycle UI follows the verified state machine. Preserve current device IDs, credentials and bindings until an independently authorized migration transaction is committed. Do not use hostnames as identity. Delay automatic coordinator transfer until authorization and revocation state can be safely inherited. Batch Windows packaging after local and contract tests pass.
+
+## Identity persistence decision
+
+Use a local transactional SQLite reference for stable network identity and immutable public-key bindings. It provides durable one-to-one mapping and a future path toward a unified coordinator transaction authority without adding a dependency to the existing running Router. The storage engine is not a solution to multi-coordinator consensus, same-user compromise or stale-state rollback. Preserve the public-key wire format and allow platform-specific protected storage adapters. Do not add client UI or trigger Windows installer builds during reference-only identity development.
+

@@ -238,3 +238,13 @@ real deployment identities and addresses in accordance with `SECURITY.md`.
 - [ ] LIFE-01: unified invite/request/approval/rejoin/leave protocol and offline revocation tests.
 - [ ] LIFE-02: platform UI and actual-device acceptance after the state machine is validated.
 - [ ] CORE-TRANSFER: safe inheritance of identity, grants and revocations; no automatic transfer in the present release.
+
+## Identity Registry V1 reference checkpoint
+
+- [x] ID-03a: explicit stable network initialization and fail-closed reopening with expected network identity.
+- [x] ID-03b: transactional persistent one-to-one identity bindings, idempotence, revision/integrity checks and isolated concurrent/crash recovery verification.
+- [x] ID-04a: design legacy migration with exact active grant scope, key proof, independent approval, revalidation and retained route ID. Isolated compatibility fixture verifies existing credential and state bytes are untouched.
+- [ ] ID-04b: implement reviewed single transaction authority for grants and identity; prevent legacy shared-pairing overwrite of existing records before enabling live migration. Add revoked/rotated-grant and replay/race tests.
+- [ ] ID-05: canonical cross-platform test vectors and native protected key stores; POSIX registry storage is only a reference. Add a Windows coordinator storage adapter and deployment-level recovery tests.
+- [ ] Actual migration and lifecycle acceptance; no live endpoint, token rotation, device removal or new installer in this reference stage.
+
