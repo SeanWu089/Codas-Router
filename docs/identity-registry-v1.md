@@ -95,3 +95,11 @@ the new coordinator must prove authorized succession, reject stale snapshots
 and enforce a single active mutation authority. SQLite alone does not provide
 distributed consensus or protect against rollback. Do not implement automatic
 Core switching in this stage.
+
+## Follow-up reference
+
+The isolated [unified authority V2](identity-authority-v2.md) implements a
+candidate common grant/identity transaction boundary and validates the
+legacy-binding race conditions. It uses a distinct schema and is not
+connected to production or a live migration of this reference database.
+

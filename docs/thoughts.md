@@ -106,3 +106,7 @@ Keep the validated release path independent of the next identity/lifecycle archi
 
 Use a local transactional SQLite reference for stable network identity and immutable public-key bindings. It provides durable one-to-one mapping and a future path toward a unified coordinator transaction authority without adding a dependency to the existing running Router. The storage engine is not a solution to multi-coordinator consensus, same-user compromise or stale-state rollback. Preserve the public-key wire format and allow platform-specific protected storage adapters. Do not add client UI or trigger Windows installer builds during reference-only identity development.
 
+## Unified authority V2 decision
+
+Identity, grants and revocation must have one transaction authority. Preserve route IDs, separate mutable display names from identity, and bind an approved migration to a specific grant generation and scope. Keep revoked records and credential history, not reusable membership. Use a versioned isolated schema and fail closed on mismatched databases; do not automatically reinitialize or run two live grant writers. A valid key proof is not authorization. Internal trusted approval methods are scaffolding for future authenticated admin and local consent adapters; they are not public APIs or implemented role authentication. The local transaction/event sequence is neither tamper-proof audit nor distributed consensus.
+

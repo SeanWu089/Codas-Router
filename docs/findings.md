@@ -211,3 +211,12 @@ The independent registry reference introduces a stable network ID, immutable one
 Migration cannot be enabled while shared-pairing registration can replace an existing route's token. Before integration, block unauthorized replacement and implement a unified transaction authority for active grant generation, local/administrator authorization, challenge scope and identity binding. Proof alone does not authorize access or rejoin. Production remains unchanged by this reference.
 
 Validation: 16/16 registry tests passed in three repeated runs; complete isolated Node regression 112/112. No skipped tests on the POSIX test host.
+
+## 2026-11-26 — Unified identity and grant authority V2 reference
+
+The unified local SQLite reference now serializes trusted legacy grant import, credential rotation/revocation and approved identity binding in one database. A binding is committed only after a verified active credential, exact grant generation and scope, separate trusted administrator and local-consent decisions, one-use key proof and final revalidation inside BEGIN IMMEDIATE. Import cannot overwrite an existing route or reuse a retired credential. Revocation retains the identity binding and revoked grant record. A committed binding leaves the legacy route, grant and credential unchanged. Historical credential hashes are retained, but snapshots/events exclude them. Pending challenges are bounded and invalidated on restart.
+
+Validation: 22/22 new authority tests passed on three repeated runs; full isolated Node suite 134/134 passed with no skips. The tests cover exact scope and approval, expired/replayed requests, cross-route binding, credential rotation/revocation before final write, true multi-process conflicts, interrupted and committed transaction recovery, schema/history consistency, and no plaintext credential persistence. Shared V1 storage helpers were extracted without changing the V1 registry schema or its 16-test acceptance.
+
+This is a reference, not an activated authorization system. Production still uses the original Router grant store. Actual administrative authentication, native local-consent proof and protected key storage, grant import/cutover, workspace enforcement, session termination and queued-job cancellation are not yet implemented. The reference requires local POSIX storage and the experimental Node 22 SQLite API. No client changes, production credential access, or Windows installer builds occurred.
+

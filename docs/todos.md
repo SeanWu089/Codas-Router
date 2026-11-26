@@ -248,3 +248,12 @@ real deployment identities and addresses in accordance with `SECURITY.md`.
 - [ ] ID-05: canonical cross-platform test vectors and native protected key stores; POSIX registry storage is only a reference. Add a Windows coordinator storage adapter and deployment-level recovery tests.
 - [ ] Actual migration and lifecycle acceptance; no live endpoint, token rotation, device removal or new installer in this reference stage.
 
+## Unified authority V2 checkpoint
+
+- [x] ID-04b-reference: one SQLite transaction authority for trusted legacy import, exact-grant migration, rotation/revocation, immutable identity binding and retained history. Prevent route replacement and credential reuse within this reference. Validate binding/rotation/revocation races, crash recovery, replay, expiry and scoped independent approval. 22 new tests passed three times; total 134/134.
+- [ ] ID-04b-production: design single-writer legacy cutover and rollback/recovery, prevent current shared-pairing enrollment from overwriting existing records, verify imported grant baseline, canonical scope digest and live session policy. V2 does not yet replace production JSON.
+- [ ] ID-05: canonical cross-platform signature test vectors; platform-protected key adapters (macOS Keychain, Windows CNG/appropriate protected storage, Android Keystore); upgrade persistence, loss/recovery and real interoperability acceptance.
+- [ ] AUTH-01: wire authenticated administrator roles and trusted local consent, grant and session expiry/revocation enforcement, old SSE/queued-job invalidation, and running-task boundary. No current authority method is a public endpoint.
+- [ ] LIFE-01/02: invite/request/approval/rejoin/leave state machine, then platform UI and physical acceptance.
+- [ ] No automatic coordinator transfer until the entire authorization and revocation state can be transferred safely.
+

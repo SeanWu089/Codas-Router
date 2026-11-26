@@ -1,10 +1,9 @@
 // Reference-only coordinator identity registry. No live Router integration.
 // A binding records a trusted, independently authorized identity decision;
 // neither possession of a public key nor a registry entry grants access.
-import { DatabaseSync } from 'node:sqlite';
 import { randomBytes } from 'node:crypto';
-import { closeSync, fsyncSync, lstatSync, openSync, realpathSync } from 'node:fs';
-import path from 'node:path';
+import { closeSync, openSync } from 'node:fs';
+import { invariant, isNetworkId, checkedPath, checkedFile, checkSidecars, syncDirectory, connect, transaction } from './identity-registry-storage.js';
 import { normalizeDeviceIdentity, planIdentityBinding } from './device-identity.js';
 
 const VERSION = 1;
@@ -14,82 +13,6 @@ const CONSTRUCTOR = Symbol('registry constructor');
 const META = 'CREATE TABLE registry_meta (singleton INTEGER PRIMARY KEY CHECK(singleton = 1), network_id TEXT NOT NULL, revision INTEGER NOT NULL CHECK(revision >= 0)) STRICT';
 const BINDINGS = 'CREATE TABLE identity_bindings (route_id TEXT PRIMARY KEY NOT NULL, identity_id TEXT NOT NULL UNIQUE, public_key TEXT NOT NULL, bound_revision INTEGER NOT NULL UNIQUE CHECK(bound_revision > 0)) STRICT';
 
-function invariant(ok, code) {
-  if (!ok) throw new Error(code);
-}
-function isNetworkId(value) {
-  return typeof value === 'string' && /^[A-Za-z0-9_-]{43}$/.test(value) &&
-    Buffer.from(value, 'base64url').length === 32 &&
-    Buffer.from(value, 'base64url').toString('base64url') === value;
-}
-function ownerOnly(st) {
-  return st.uid === process.getuid() && (st.mode & 0o077) === 0;
-}
-
-// POSIX local-state reference adapter. A Windows coordinator needs an
-// equivalent ACL/reparse-point adapter before this is used in production.
-// The database must not reside on a synced/network filesystem. Same-user
-// malicious processes are not a security boundary of this adapter.
-function checkedPath(filePath) {
-  invariant(process.platform !== 'win32' && typeof process.getuid === 'function',
-    'IDENTITY_REGISTRY_REQUIRES_PLATFORM_STORAGE');
-  invariant(typeof filePath === 'string' && path.isAbsolute(filePath) &&
-    !filePath.includes('\0'), 'IDENTITY_REGISTRY_PATH_INVALID');
-  const parent = path.dirname(filePath);
-  const directory = lstatSync(parent);
-  invariant(directory.isDirectory() && !directory.isSymbolicLink() &&
-    ownerOnly(directory), 'IDENTITY_REGISTRY_STORAGE_UNSAFE');
-  return path.join(realpathSync(parent), path.basename(filePath));
-}
-function checkedFile(file, optional = false) {
-  try {
-    const st = lstatSync(file);
-    invariant(st.isFile() && !st.isSymbolicLink() && st.nlink === 1 &&
-      ownerOnly(st), 'IDENTITY_REGISTRY_STORAGE_UNSAFE');
-    return { dev: st.dev, ino: st.ino };
-  } catch (error) {
-    if (optional && error.code === 'ENOENT') return false;
-    throw error;
-  }
-}
-function checkSidecars(file, creating = false) {
-  const journal = checkedFile(file + '-journal', true);
-  const wal = checkedFile(file + '-wal', true);
-  const shm = checkedFile(file + '-shm', true);
-  invariant(!wal && !shm && (!creating || !journal),
-    'IDENTITY_REGISTRY_UNEXPECTED_JOURNAL');
-}
-function syncDirectory(file) {
-  const fd = openSync(path.dirname(file), 'r');
-  try { fsyncSync(fd); } finally { closeSync(fd); }
-}
-function connect(file) {
-  const db = new DatabaseSync(file, {
-    enableForeignKeyConstraints: true,
-    enableDoubleQuotedStringLiterals: false,
-    allowExtension: false,
-  });
-  try {
-    db.exec('PRAGMA busy_timeout = 5000; PRAGMA synchronous = FULL; PRAGMA trusted_schema = OFF;');
-    invariant(db.prepare('PRAGMA journal_mode').get().journal_mode === 'delete',
-      'IDENTITY_REGISTRY_JOURNAL_MODE_INVALID');
-    return db;
-  } catch (error) {
-    db.close();
-    throw error;
-  }
-}
-function transaction(db, write, fn) {
-  db.exec(write ? 'BEGIN IMMEDIATE' : 'BEGIN');
-  try {
-    const result = fn();
-    db.exec('COMMIT');
-    return result;
-  } catch (error) {
-    try { db.exec('ROLLBACK'); } catch { /* Preserve the original error. */ }
-    throw error;
-  }
-}
 function checkSchema(db) {
   invariant(db.prepare('PRAGMA application_id').get().application_id === APP_ID &&
     db.prepare('PRAGMA user_version').get().user_version === VERSION,
