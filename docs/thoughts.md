@@ -110,3 +110,7 @@ Use a local transactional SQLite reference for stable network identity and immut
 
 Identity, grants and revocation must have one transaction authority. Preserve route IDs, separate mutable display names from identity, and bind an approved migration to a specific grant generation and scope. Keep revoked records and credential history, not reusable membership. Use a versioned isolated schema and fail closed on mismatched databases; do not automatically reinitialize or run two live grant writers. A valid key proof is not authorization. Internal trusted approval methods are scaffolding for future authenticated admin and local consent adapters; they are not public APIs or implemented role authentication. The local transaction/event sequence is neither tamper-proof audit nor distributed consensus.
 
+## Native identity storage reference
+
+Retain the Identity V1 wire contract. Choose native nonexportable keys rather than plaintext private-key files: tested macOS Secure Enclave hardware-wrapped representation and current-user Windows CNG, with AndroidKeyStore adapter awaiting actual device verification. Explicit create versus load, independently expected identity/network, fail-closed errors and separate consent are mandatory. Do not claim production app upgrade persistence until integrated into the real package/signing ownership and tested. No automatic software-key fallback, no arbitrary signing endpoint.
+

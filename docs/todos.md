@@ -257,3 +257,13 @@ real deployment identities and addresses in accordance with `SECURITY.md`.
 - [ ] LIFE-01/02: invite/request/approval/rejoin/leave state machine, then platform UI and physical acceptance.
 - [ ] No automatic coordinator transfer until the entire authorization and revocation state can be transferred safely.
 
+## Native identity checkpoint
+
+- [x] ID-05-wire: canonical P-256 SPKI, fingerprint and DER signature vector shared by Swift, CNG and Java; native proof checked by Node.
+- [x] ID-05-mac-reference: actual Secure Enclave wrapped-key persistent reopen and isolated native proof acceptance, synthetic key removed.
+- [x] ID-05-windows-reference: actual CNG persistence and native proof acceptance, synthetic key and temporary workspace removed; existing installed Agent unchanged.
+- [x] ID-05-android-build: API 35 compile, separate signed test APK and ADB acceptance runner prepared.
+- [ ] ID-05-android-device: explicit selected physical-device AndroidKeyStore proof/reopen/cleanup; not passed by compile or JVM test.
+- [ ] ID-05-integration: stable production key namespace, trusted expected-identity and network anchors, signed application ownership, actual app restart/upgrade and controlled recovery.
+- [ ] AUTH-01-production: reviewed single-writer grant import/cutover, authenticated admin/local consent, revocation, SSE/session and queued-job invalidation. No new production client builds in this native reference stage.
+

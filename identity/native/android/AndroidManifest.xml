@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.codas.identityprobe" android:versionCode="1" android:versionName="1.0-test">
+  <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="35"/>
+  <application android:label="Codas Identity Probe" android:allowBackup="false" android:debuggable="true" android:hasCode="true"/>
+  <instrumentation android:name="codas.identity.IdentityProbe" android:targetPackage="com.codas.identityprobe" android:label="Codas Identity Probe"/>
+</manifest>
