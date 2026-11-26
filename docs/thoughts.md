@@ -97,3 +97,7 @@ The user's longer-term direction is a distributed Codas network with a replaceab
 ## Core device display v1 — accepted direction
 
 Use one optional display-only metadata contract in the existing authenticated SSE handshake, rather than requiring every device to update together. Preserve old consumers and coordinators; never infer hardware form factor from the device's display name. Future unsupported form factors can be added independently of authorization and routing.
+
+## 2026-11-26 — Release and identity development tracks
+
+Keep the validated release path independent of the next identity/lifecycle architecture. Complete existing candidate acceptance without speculative protocol changes. For Identity V1, establish one versioned wire contract, a durable coordinator identity registry and explicit legacy binding rules; verify portable cryptographic vectors and platform-protected keys. Only then introduce enrollment, renewal and revocation APIs with administrative approval and local consent. The lifecycle UI follows the verified state machine. Preserve current device IDs, credentials and bindings until an independently authorized migration transaction is committed. Do not use hostnames as identity. Delay automatic coordinator transfer until authorization and revocation state can be safely inherited. Batch Windows packaging after local and contract tests pass.

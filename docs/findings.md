@@ -197,3 +197,7 @@ Local integration verification: 84 Node tests, 26 isolated production-helper tes
 ## Core device display v1
 
 The authenticated SSE ready event retains protocol 1 and its existing identity/lease fields. A versioned optional coreDevice object exposes only the coordinator's own display label, platform and supported hardware form factor. The label and form factor are not routing identities or authorization inputs. Invalid/unknown metadata must not prevent an otherwise valid connection. Hardware detection is bounded, cached and read-only; no hardware serial number or local path is sent. Production-baseline isolated Node tests: 88 passed, including four new metadata and SSE compatibility tests. Deployment dry-run passed. Public-source changes preserve the existing public baseline branding and do not include private runtime state.
+
+## 2026-11-26 — Identity and Core display integration
+
+The tested identity reference and backward-compatible Core display metadata have been combined in an isolated source baseline. The complete Node regression passed 96 tests (including identity proof, persistent POSIX reference storage and display compatibility). Identity is still a reference module: no enrollment endpoint, live migration or authorization behavior has changed. Protected native key storage, persistent coordinator identity mapping, authorized migration and lifecycle integration remain separate gates. Windows builds remain independent of reference-module development.

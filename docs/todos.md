@@ -227,3 +227,14 @@ real deployment identities and addresses in accordance with `SECURITY.md`.
 - [x] Run isolated production-baseline regression and deployment dry-run; 88 Node tests passed.
 - [ ] Review public feature-branch CI and integrate through develop; do not replace production-only runtime modules.
 - [ ] Verify actual deployed Core/Windows client displays the correct device after reconnect and clears stale metadata after disconnect. Existing peers must continue connecting without re-pairing.
+
+## 2026-11-26 — Integrated identity development
+
+- [x] ID-01/02: reference identity proof and exclusive POSIX development storage. Combined display/identity Node regression: 96 tests passed. No production changes.
+- [ ] ID-03: define persistent registry schema, stable network identity, atomic one-to-one binding and recovery constraints; test crash/concurrency, corruption and duplicate identities.
+- [ ] ID-04: define and verify legacy migration using current authorized identity and new key proof; preserve route ID and existing credentials until a committed migration. No name-based merge.
+- [ ] ID-05: deterministic wire vectors and native protected key-store adapters for each supported platform; cross-platform interoperability and upgrade persistence.
+- [ ] AUTH-01: authorization lifecycle, grant rotation/revocation, administrator roles, session and queued-job invalidation.
+- [ ] LIFE-01: unified invite/request/approval/rejoin/leave protocol and offline revocation tests.
+- [ ] LIFE-02: platform UI and actual-device acceptance after the state machine is validated.
+- [ ] CORE-TRANSFER: safe inheritance of identity, grants and revocations; no automatic transfer in the present release.
