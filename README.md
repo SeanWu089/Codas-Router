@@ -378,7 +378,7 @@ MIT.
 
 </div>
 
-## Codas menu bar controller (macOS v0.3.14 candidate)
+## Codas menu bar controller (macOS v0.3.15 candidate)
 
 **Codas** is the native Swift/AppKit menu component. Its display name and
 full-color app icon use the shared Codas brand; the monochrome menu icon
@@ -410,7 +410,7 @@ ordering, freshness, scrolling, layout and installer failure recovery.
 Physical reboot acceptance remains a separate check; a successful source
 build alone does not establish that result.
 
-### Working directories (0.3.14 candidate)
+### Working directories (0.3.15 candidate)
 
 Open the menu, select the local Mac or gear, and choose **Working Directories**.
 The list reflects the saved DevSpace configuration, not a claim that every
@@ -440,11 +440,11 @@ npm run test:mac
 zsh scripts/mac/menu-app/build.sh
 ```
 
-The build produces `dist/Codas-mac-0.3.14.zip`. It stages the app without
+The build produces `dist/Codas-mac-0.3.15.zip`. It stages the app without
 installing it. Inspect a candidate-only installation plan with:
 
 ```sh
-python3 scripts/mac/menu-app/install-menu.py --source dist/Codas-mac-0.3.14.zip --plan
+python3 scripts/mac/menu-app/install-menu.py --source dist/Codas-mac-0.3.15.zip --plan
 ```
 
 To install from a locally authorized terminal, replace `--plan` with `--apply`.
@@ -456,7 +456,7 @@ reuse. Installing the menu component does not restart Router or DevSpace.
 For a transferable installer folder:
 
 ```sh
-python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.14.zip --output dist/Codas-mac-0.3.14-installer
+python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.15.zip --output dist/Codas-mac-0.3.15-installer
 ```
 
 The folder contains the signed app ZIP, the installer, its double-clickable

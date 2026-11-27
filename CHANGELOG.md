@@ -1,5 +1,10 @@
 # Changelog
 
+## Codas macOS 0.3.15 / build 19 — candidate hotfix, 2026-11-27
+
+- Fix the working-directory service ownership preflight to recognize the actual, verified production LaunchAgent runner at `CodasSol/production/bin/devspace-runner.zsh`, alongside the supported legacy runner. Keep other runner paths denied.
+- Add regression coverage for both recognized launch contracts and rejection of an unrelated process. No Router/backend configuration changes or automatic rollout.
+
 ## Codas macOS 0.3.14 / build 18 — candidate, 2026-11-27
 
 - Simplify device details and fold technical identifiers; preserve truthful heartbeat and execution status.

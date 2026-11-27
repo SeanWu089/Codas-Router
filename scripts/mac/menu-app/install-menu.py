@@ -67,10 +67,10 @@ def inspect_bundle(app, candidate=False):
         raise RuntimeError(f"Unrecognized build number: {app}")
     if candidate:
         expected = {"CFBundleName": "Codas", "CFBundleDisplayName": "Codas",
-                    "CFBundleShortVersionString": "0.3.14", "CFBundleVersion": "18",
+                    "CFBundleShortVersionString": "0.3.15", "CFBundleVersion": "19",
                     "CFBundleExecutable": "CodasMac"}
         if any(str(info.get(k, "")) != v for k, v in expected.items()):
-            raise RuntimeError("Candidate metadata is not Codas 0.3.14/build 18.")
+            raise RuntimeError("Candidate metadata is not Codas 0.3.15/build 19.")
         if info.get("CodasSourceState") != "clean" or not re.fullmatch(r"[0-9a-f]{40}", str(info.get("CodasSourceCommit", ""))):
             raise RuntimeError("Candidate must identify a clean committed source checkpoint.")
         if not os.access(app / "Contents/Helpers/CodasMenuLauncher", os.X_OK):
@@ -229,7 +229,7 @@ def _apply_locked(source, source_files, target, obsolete, agent, config, support
                     raise RuntimeError("The running bundle is absent on disk.")
                 continue
             info, files = inspect_bundle(path)
-            if int(info["CFBundleVersion"]) > 18:
+            if int(info["CFBundleVersion"]) > 19:
                 raise RuntimeError("The existing bundle is newer than this candidate.")
             expected_exe = str(path / "Contents/MacOS" / info["CFBundleExecutable"])
             if any(a["executable_path"] != expected_exe for a in running):
@@ -393,7 +393,7 @@ def _apply_locked(source, source_files, target, obsolete, agent, config, support
 
     # COMMIT BOUNDARY: verified installation/startup must not be rolled back for optional legacy cleanup.
     source_commit = plistlib.loads((source / "Contents/Info.plist").read_bytes()).get("CodasSourceCommit")
-    result = {"installer_revision": 2, "status": "installed", "version": "0.3.14", "build": "18", "source_commit": source_commit, "process": second,
+    result = {"installer_revision": 2, "status": "installed", "version": "0.3.15", "build": "19", "source_commit": source_commit, "process": second,
               "startup_plist": str(agent), "backup": str(backup),
               "previous_target_holding": str(previous_target_hold) if core_moved else None,
               "cleanup_deferred": deferred, "cleanup_completed": completed,
@@ -455,7 +455,7 @@ def process_source(args, source, origin):
     if not args.apply:
         # Do not stat/read destination paths here: the plan works in a source-only workspace.
         print(json.dumps({"mode": "plan_only", "installer_revision": 2, "source": str(origin), "candidate": str(source),
-                          "version": "0.3.14", "build": "18",
+                          "version": "0.3.15", "build": "19",
                           "source_commit": info["CodasSourceCommit"],
                           "candidate_binary_sha256": source_files["Contents/MacOS/CodasMac"][0],
                           "target": str(target), "explicit_obsolete_apps": [str(p) for p in obsolete],

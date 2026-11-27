@@ -12,7 +12,7 @@ function serviceFixture(t) {
   t.after(() => fs.rmSync(home, { recursive: true, force: true }));
   const label = "com.codassol.devspace.mac";
   const plist = path.join(home, "Library/LaunchAgents", label + ".plist");
-  const runner = path.join(home, "Library/Application Support/CodasSol-mac/devspace-runner.zsh");
+  const runner = path.join(home, "Library/Application Support/CodasSol/production/bin/devspace-runner.zsh");
   const cli = path.join(home, "fixture-devspace/dist/cli.js");
   fs.mkdirSync(path.dirname(plist), { recursive: true });
   fs.writeFileSync(plist, "fixture", { mode: 0o600 });
@@ -52,6 +52,17 @@ test("foreign listener, unrecognized command and custom config environment canno
   assert.equal(await f.managed.canQuiesce(), false);
   f.state.foreign = false; f.contract.EnvironmentVariables.DEVSPACE_CONFIG_DIR = "/fixture/other";
   assert.equal(await f.managed.canQuiesce(), false);
+  assert.equal(f.state.bootouts, 0);
+});
+
+test("known legacy runner is recognized, but arbitrary runner path remains denied", { skip: !posix }, async (t) => {
+  const f = serviceFixture(t);
+  const canonical = f.contract.ProgramArguments[1];
+  f.contract.ProgramArguments[1] = canonical.replace("CodasSol/production/bin/", "CodasSol-mac/");
+  assert.equal(await f.managed.canQuiesce(), true);
+  f.contract.ProgramArguments[1] = canonical.replace("CodasSol/production/bin/", "OtherApp/");
+  assert.equal(await f.managed.canQuiesce(), false);
+  assert.equal(await f.managed.quiesce(), false);
   assert.equal(f.state.bootouts, 0);
 });
 

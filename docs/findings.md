@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-11-27 — Installed build 18 post-install diagnostics
+
+- The installer receipt confirmed installed Codas 0.3.14/build 18 with clean source commit `d927f5f`, zero deferred cleanup entries and an already-running canonical app. Router device listing returned Mac online/backend reachable; fresh `open_workspace` of the already-approved workingSHOP directory worked; both local health endpoints answered HTTP 200; the menu app remained running.
+- Actual `launchctl` status showed `com.codassol.devspace.mac` loaded and running with PID matching the DevSpace listener, but the managed runner came from `~/Library/Application Support/CodasSol/production/bin/devspace-runner.zsh`, not the menu app's assumed legacy runner. This would have disabled Add Directory. Updated the strict recognized-runner allowlist and added regression coverage. Keep rejection of foreign/unmanaged services. The original build 18 remains installed until the user installs the corrected build 19.
+
 ## 2026-11-27 — macOS 0.3.14 candidate
 
 - Integrated the local working-directory page and native owner-authentication helper with the guarded configuration transaction. The initial release scope is adding owner-controlled home project directories only; no remote policy mutation endpoint. The running Router's routing range must already cover the reviewed addition. The helper verifies explicit allow/deny MCP outcomes locally, not merely HTTP health; it attempts to revoke temporary verification tokens after use.

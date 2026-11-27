@@ -22,7 +22,13 @@ export function createMacManagedDevSpace({ home = os.homedir(), cli, run = syste
   const domain = `gui/${process.getuid()}`;
   const target = `${domain}/${label}`;
   const plist = path.join(home, "Library/LaunchAgents", `${label}.plist`);
-  const runner = path.join(home, "Library/Application Support/CodasSol-mac/devspace-runner.zsh");
+  // The 2026-11-27 production service was promoted by the stable Mac runtime
+  // installer, not the older menu-app cutover utility. Keep an explicit
+  // allowlist of known same-user, exact-path managed launcher contracts.
+  const supportedRunners = [
+    path.join(home, "Library/Application Support/CodasSol/production/bin/devspace-runner.zsh"),
+    path.join(home, "Library/Application Support/CodasSol-mac/devspace-runner.zsh")
+  ];
   let stoppedByUs = false;
   let launchedByUs = false;
   let stopping = false;
@@ -32,7 +38,9 @@ export function createMacManagedDevSpace({ home = os.homedir(), cli, run = syste
     const result = run("/usr/bin/plutil", ["-convert", "json", "-o", "-", plist]);
     if (result.code !== 0) return false;
     const p = JSON.parse(result.stdout);
-    if (p.Label !== label || JSON.stringify(p.ProgramArguments) !== JSON.stringify(["/bin/zsh", runner, "--serve"]) || p.WorkingDirectory !== home) return false;
+    const recognizedArgs = supportedRunners.some((runner) =>
+      JSON.stringify(p.ProgramArguments) === JSON.stringify(["/bin/zsh", runner, "--serve"]));
+    if (p.Label !== label || !recognizedArgs || p.WorkingDirectory !== home) return false;
     // Custom configuration/runtime environment needs a separately verified adapter.
     if (Object.keys(p.EnvironmentVariables || {}).some((key) => key !== "PATH")) return false;
     return true;

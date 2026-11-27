@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 SOURCE_COMMIT="$(git -C "$ROOT/../../.." rev-parse HEAD)"
 SOURCE_STATE=clean
 [[ -z "$(git -C "$ROOT/../../.." status --porcelain --untracked-files=normal)" ]] || SOURCE_STATE=dirty
-OUTPUT="${1:-$ROOT/../../../dist/Codas-mac-0.3.14.zip}"
+OUTPUT="${1:-$ROOT/../../../dist/Codas-mac-0.3.15.zip}"
 if [[ "$OUTPUT" != *.zip ]]; then
     print -u2 -- "Build output must be a .zip archive; use install-menu.py to install the app."
     exit 2
@@ -44,8 +44,8 @@ cat > "$DEST/Contents/Info.plist" <<PLIST
 <key>CFBundleIdentifier</key><string>com.codassol.mac</string>
 <key>CFBundleName</key><string>Codas</string>
 <key>CFBundleDisplayName</key><string>Codas</string>
-<key>CFBundleShortVersionString</key><string>0.3.14</string>
-<key>CFBundleVersion</key><string>18</string>
+<key>CFBundleShortVersionString</key><string>0.3.15</string>
+<key>CFBundleVersion</key><string>19</string>
 <key>CodasSourceCommit</key><string>$SOURCE_COMMIT</string>
 <key>CodasSourceState</key><string>$SOURCE_STATE</string>
 <key>CFBundleIconFile</key><string>Codas</string>
