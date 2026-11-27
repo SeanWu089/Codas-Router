@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-OUTPUT="${1:-$ROOT/../../../dist/Codas-mac-0.3.12.zip}"
+OUTPUT="${1:-$ROOT/../../../dist/Codas-mac-0.3.13.zip}"
 if [[ "$OUTPUT" != *.zip ]]; then
     print -u2 -- "Build output must be a .zip archive; use install-menu.py to install the app."
     exit 2
@@ -31,8 +31,8 @@ cat > "$DEST/Contents/Info.plist" <<'PLIST'
 <key>CFBundleIdentifier</key><string>com.codassol.mac</string>
 <key>CFBundleName</key><string>Codas-mac</string>
 <key>CFBundleDisplayName</key><string>Codas-mac</string>
-<key>CFBundleShortVersionString</key><string>0.3.12</string>
-<key>CFBundleVersion</key><string>16</string>
+<key>CFBundleShortVersionString</key><string>0.3.13</string>
+<key>CFBundleVersion</key><string>17</string>
 <key>CFBundleIconFile</key><string>Codas</string>
 <key>CFBundleExecutable</key><string>CodasMac</string>
 <key>CFBundlePackageType</key><string>APPL</string>

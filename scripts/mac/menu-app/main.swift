@@ -16,15 +16,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private var localClickMonitor: Any?
 
     private func setStatusIcon() {
-        if let path = Bundle.main.path(forResource: "SeanTemplate", ofType: "png"),
-           let icon = NSImage(contentsOfFile: path) {
-            icon.size = NSSize(width: 21, height: 21)
-            icon.isTemplate = true
-            statusItem.button?.image = icon
-            statusItem.button?.imagePosition = .imageOnly
-        } else {
-            statusItem.button?.title = "◈"
-        }
+        statusItem.button?.image = CodasPeerArtwork.templateImage()
+        statusItem.button?.imagePosition = .imageOnly
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -90,6 +83,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     private func closePanel() {
+        model.panelVisible = false
+        model.closeEnrollment()
         stopOutsideClickMonitors()
         if popover.isShown { popover.performClose(nil) }
     }
@@ -116,7 +111,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
     }
 
-    func popoverDidClose(_ notification: Notification) { stopOutsideClickMonitors() }
+    func popoverDidClose(_ notification: Notification) {
+        model.panelVisible = false
+        model.closeEnrollment()
+        stopOutsideClickMonitors()
+    }
     func applicationDidResignActive(_ notification: Notification) { closePanel() }
     func applicationWillTerminate(_ notification: Notification) {
         stopOutsideClickMonitors()
@@ -143,6 +142,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             panelController.resize(to: size)
             popover.contentSize = size
             popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+            model.panelVisible = true
             NSApp.activate(ignoringOtherApps: true)
             watchOutsideClicks()
             // Opening the panel reuses fresh public health checks, avoiding a

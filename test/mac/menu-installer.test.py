@@ -37,12 +37,12 @@ class InstallerFaultTests(unittest.TestCase):
                 (path / "Contents/MacOS").mkdir(parents=True)
                 (path / "Contents/Info.plist").write_bytes(plistlib.dumps({
                     "CFBundleIdentifier": "com.codassol.mac", "CFBundleExecutable": executable,
-                    "CFBundleVersion": str(build), "CFBundleShortVersionString": "0.3.12"}))
+                    "CFBundleVersion": str(build), "CFBundleShortVersionString": "0.3.13"}))
                 binary = path / "Contents/MacOS" / executable
                 binary.write_bytes(marker.encode())
                 binary.chmod(0o755)
 
-            make_app(source, 16, "reviewed candidate", "CodasMac")
+            make_app(source, 17, "reviewed candidate", "CodasMac")
             make_app(old, 15, "current working menu")
             if fault in ("partial_legacy", "active_partial_legacy"):
                 (legacy / "Contents/Resources").mkdir(parents=True)
