@@ -2,7 +2,9 @@
 
 ## 2026-11-27 — P0: Local workspace authorization (development checkpoint)
 
+- Owner-confirmed acceptance split: the development agent owns implementation, builds, debugging, automated regression, fault injection and installation preparation/verification. Hand off only concrete physical-environment tests that require the owner after a verified candidate is installed. Never equate automated fixtures with user acceptance.
 - [x] AUTHZ-01/02 foundation: implement and exercise an isolated root/lease policy and read-only DevSpace configuration-change planner. Preserve current production trust boundaries; do not treat this module as a deployed authorization system.
+- [x] AUTHZ-02 transaction foundation: implement reviewed config editing, private backup, atomic replacement, exclusive transaction marker, activation verification contract and guarded rollback. Test with synthetic files and services and an independently installed JSONC parser fixture.
 - [ ] AUTHZ-02 — Connect the native local folder-selection and review controller to a protected, atomic policy/configuration transaction with backup, change detection, rollback, and Router/backend agreement. Require an explicit non-empty backend root list; never silently grant the home or working directory.
 - [ ] AUTHZ-03 — Choose and implement enforceable least-privilege execution isolation for all file/command/subprocess entry points. Audit direct proxy and peer execution paths, policy storage, link races, and same-account shell access. Until then, do not advertise a filesystem sandbox.
 - [ ] AUTHZ-04 — Integrate scoped grants/leases into actual MCP workspace bindings and peer/agent execution admission, with authoritative revocation and reconnect behavior. Existing in-flight operations need a separate cancellation/drain contract.

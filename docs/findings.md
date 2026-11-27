@@ -1,5 +1,10 @@
 # Findings
 
+## 2026-11-27 — Local configuration transaction foundation
+
+- Added a local-only POSIX configuration transaction controller with opaque one-use review IDs, complete source digest and identity checks, unrelated-setting preservation, private original-byte backups, an exclusive transaction marker, durable phase records and same-directory atomic replacement. The JSONC codec uses the existing upstream parser interface and rejects malformed or duplicate keys. A failed activation restores the previous bytes only when the candidate identity is still recognized; unverified rollback or an external edit retains the transaction marker for local recovery rather than overwriting unrelated changes.
+- Fixture service adapters deliberately distinguish managed-service quiescence and effective policy proof from basic liveness. The production Mac service/Router adapters, approved local UI and actual allow/deny probes are not connected yet. This code is not a filesystem/process sandbox. POSIX mode preservation is tested; native ACL/extended-attribute handling and crash recovery orchestration still require review before live deployment. No production configuration or process was modified.
+
 ## 2026-11-27 — Local workspace-policy development checkpoint
 
 - DevSpace documents startup-loaded configuration, including `workspaces.allowedRoots`: a running server does not hot-reload it. An empty root list falls back to its working directory. See https://devspace.run/docs/reference/configuration/ and upstream issue Waishnav/devspace#364. The local directory-management design therefore requires an explicit reviewed configuration change, controlled backend restart, rollback, and fresh end-to-end authorization verification. Do not advertise a saved configuration as active authorization.
