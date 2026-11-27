@@ -41,7 +41,11 @@ struct DevicePanelLayoutTest {
                 "Negative secondary-display coordinates must not change available size")
 
         for size in [normalSize, shortSize] {
-            let model = DevicePanelModel(client: DeviceDirectoryClient(routerPort: fixturePort, stateFile: state))
+            let directoryModel = WorkspaceDirectoryModel { request in
+                precondition(request.command == "list", "Layout test must not edit live configuration")
+                return .init(ok:true,roots:["/fixture/Projects","/fixture/AnotherProject"],managed:true,recoveryPending:false)
+            }
+            let model = DevicePanelModel(client: DeviceDirectoryClient(routerPort: fixturePort, stateFile: state), workspaceDirectories:directoryModel)
             // View appearance must not contact real services during a layout test.
             model.loading = true
             Task { await model.refreshUsage() }
@@ -100,6 +104,17 @@ struct DevicePanelLayoutTest {
             verifyGeometry(host, popover: popover, size: size, route: "back to local detail")
             require(abs(scrollView(in: host.view).contentView.bounds.minY) < 1,
                     "Returning from requests must reset device detail scrolling")
+            model.showingDirectories = true
+            settle(host)
+            let directoryDeadline = Date().addingTimeInterval(2)
+            while !directoryModel.loaded && Date() < directoryDeadline { RunLoop.main.run(until:Date().addingTimeInterval(0.02)) }
+            require(directoryModel.loaded && directoryModel.roots.count == 2, "Working directories fixture was not loaded")
+            settle(host)
+            verifyGeometry(host,popover:popover,size:size,route:"working directories")
+            try savePreview(host,size:size,route:"working-directories")
+            model.showingDirectories = false
+            settle(host)
+            verifyGeometry(host,popover:popover,size:size,route:"back from working directories")
             model.selectedDeviceID = nil
             settle(host)
             verifyGeometry(host, popover: popover, size: size, route: "back to devices")

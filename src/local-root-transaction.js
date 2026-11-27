@@ -69,6 +69,15 @@ function replaceIfCurrent(file, expected, bytes, mode) {
 
 function roots(config) { return config?.workspaces?.allowedRoots; }
 
+export function inspectLocalRootConfig(configFile, codec) {
+  const current = readOwnedFile(configFile);
+  const list = roots(codec.decode(current.bytes.toString("utf8")));
+  if (!Array.isArray(list) || !list.length || list.some((item) => typeof item !== "string" || !item.trim())) {
+    fail("EXPLICIT_ROOTS_REQUIRED", "An explicit non-empty DevSpace root list is required");
+  }
+  return { roots: [...list], digest: current.digest };
+}
+
 /** Adapter for the same JSONC parser used by DevSpace. Preserves comments and
  * unrelated settings, and refuses invalid or ambiguous input. */
 export function makeJSONCRootCodec({ parse, parseTree, modify, applyEdits }) {

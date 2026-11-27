@@ -21,6 +21,10 @@ final class DevicePanelModel: ObservableObject {
     @Published private(set) var router = RouterHealth(connected: false, backendReachable: false)
     @Published private(set) var devspaceManaged = false
     @Published var showingRequests = false
+    @Published var showingDirectories = false
+    @Published var showingTechnicalDetails = false
+    @Published var showingRename = false
+    let workspaceDirectories: WorkspaceDirectoryModel
     @Published var panelVisible = false
     @Published var showingEnrollment = false
     @Published private(set) var enrollmentCode: String?
@@ -53,8 +57,9 @@ final class DevicePanelModel: ObservableObject {
     private let manager = DevSpaceManager()
     var onStatusChange: ((PanelConnectionStatus) -> Void)?
 
-    init(client: DeviceDirectoryClient = DeviceDirectoryClient()) {
+    init(client: DeviceDirectoryClient = DeviceDirectoryClient(), workspaceDirectories: WorkspaceDirectoryModel? = nil) {
         self.client = client
+        self.workspaceDirectories = workspaceDirectories ?? WorkspaceDirectoryModel()
         devices = client.cachedDirectory()
     }
 
@@ -87,6 +92,9 @@ final class DevicePanelModel: ObservableObject {
     }
 
     func choose(_ device: DeviceInfo) {
+        showingDirectories = false
+        showingTechnicalDetails = false
+        showingRename = false
         selectedDeviceID = device.id
         renameText = device.name
         actionMessage = ""
@@ -199,7 +207,7 @@ final class DevicePanelModel: ObservableObject {
     }
 
     func controlDevSpace(start: Bool) async {
-        guard !busy else { return }
+        guard !busy && !workspaceDirectories.busy else { return }
         busy = true
         actionMessage = start ? "Starting DevSpace…" : "Stopping DevSpace…"
         let result = await Task.detached(priority: .userInitiated) { () -> DevSpaceManager.CommandResult in
@@ -257,9 +265,10 @@ private struct CodasPeerBadge: View {
     var body: some View {
         Canvas { context, size in
             let scale = min(size.width,size.height)/120
-            for (x,y,r) in CodasPeerArtwork.dots {
+            for (index,dot) in CodasPeerArtwork.dots.enumerated() {
+                let (x,y,r) = dot
                 context.fill(Path(ellipseIn: CGRect(x:(x-r)*scale, y:(y-r)*scale,
-                    width:r*2*scale,height:r*2*scale)),with:.color(codasPaper))
+                    width:r*2*scale,height:r*2*scale)),with:.color(index == CodasPeerArtwork.dots.count-1 ? codasAccent : codasPaper))
             }
         }
         .frame(width:33,height:33)
@@ -595,35 +604,60 @@ struct DevicePanelView: View {
     private var detail: some View {
         VStack(alignment: .leading, spacing: 13) {
             if let device = model.selected {
-                HStack(spacing: 10) {
-                    Text(device.name).font(.system(size: 15, weight: .semibold)).lineLimit(1)
-                    Spacer()
-                    Circle().fill(statusColor(device.displaySeverity)).frame(width: 8, height: 8)
-                    Text(device.displayTitle).font(.system(size: 11)).foregroundColor(.secondary)
-                }
-                if model.canRenameDevices && device.id != "__local_preview__" {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("DEVICE NAME").font(.system(size: 10, weight: .semibold)).foregroundColor(.secondary)
-                        HStack {
-                            TextField("Device name", text: $model.renameText)
-                                .textFieldStyle(.roundedBorder)
-                                .onSubmit { Task { await model.saveName() } }
-                            Button("Save") { Task { await model.saveName() } }
-                                .disabled(model.busy)
+                surface {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 12) {
+                            Image(systemName: deviceSymbol(device)).font(.system(size: 25, weight: .regular))
+                                .frame(width: 52, height: 52)
+                                .background(codasPaper,in:RoundedRectangle(cornerRadius:12))
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(device.name).font(.system(size: 15, weight: .semibold)).lineLimit(1)
+                                Text(platformTitle(device)).font(.system(size:11)).foregroundColor(codasMuted)
+                            }
+                            Spacer(minLength: 0)
                         }
-                    }
+                        Divider().overlay(codasLine)
+                        HStack(spacing: 6) {
+                            Circle().fill(statusColor(device.displaySeverity)).frame(width:8,height:8)
+                            Text(device.displayTitle).font(.system(size:12,weight:.medium))
+                            Spacer()
+                            if model.canRenameDevices && device.id != "__local_preview__" {
+                                Button { model.showingRename.toggle() } label: {
+                                    Image(systemName:"pencil").font(.system(size:12,weight:.medium)).padding(5)
+                                }.buttonStyle(.plain).help("Rename device").accessibilityLabel("Rename device")
+                            }
+                        }
+                        if model.showingRename && model.canRenameDevices && device.id != "__local_preview__" {
+                            HStack {
+                                TextField("Device name", text: $model.renameText).textFieldStyle(.roundedBorder)
+                                    .onSubmit { Task { await model.saveName() } }
+                                Button("Save") { Task { await model.saveName() } }.disabled(model.busy)
+                            }
+                        }
+                    }.padding(13)
                 }
-                VStack(alignment: .leading, spacing: 6) {
-                    information("Platform", device.platform)
-                    information("Device ID", device.id)
-                    if let identity = device.installationId { information("Installation", identity) }
-                    information("Backend", device.backendTitle)
-                    information("Execution", device.executionTitle)
-                    if let last = device.lastSeenAt {
-                        information("Last seen", Date(timeIntervalSince1970: last / 1000).formatted())
-                    }
-                }.font(.system(size: 11))
+                surface {
+                    VStack(alignment:.leading,spacing:10) {
+                        Text("CONNECTION & EXECUTION").font(.system(size:10,weight:.semibold)).tracking(0.6).foregroundColor(codasMuted)
+                        information("Backend", device.backendTitle)
+                        information("Execution", device.executionTitle)
+                    }.font(.system(size:11)).padding(13)
+                }
                 if device.isThisDevice {
+                    surface {
+                        Button { model.showingDirectories = true } label: {
+                            HStack(spacing:10) {
+                                Image(systemName:"folder").font(.system(size:17)).frame(width:33,height:33)
+                                    .background(codasPaper,in:RoundedRectangle(cornerRadius:8))
+                                VStack(alignment:.leading,spacing:3) {
+                                    Text("Working Directories").font(.system(size:12,weight:.semibold))
+                                    Text("Manage local workspace access").font(.system(size:10)).foregroundColor(codasMuted)
+                                }
+                                Spacer()
+                                Image(systemName:"chevron.right").font(.system(size:10,weight:.semibold)).foregroundColor(codasMuted)
+                            }.padding(11).contentShape(Rectangle())
+                        }.buttonStyle(.plain).accessibilityIdentifier("working-directories-entry")
+                    }
                     Divider()
                     Text("CONNECTION").font(.system(size: 10, weight: .semibold)).foregroundColor(.secondary)
                     connectionRow("Outbound ChatGPT probe", available: model.external?.chatGPT)
@@ -638,8 +672,6 @@ struct DevicePanelView: View {
                         information("Sent", TrafficSnapshot.bytes(usage.sentBytes))
                         Text("Counting since \(Date(timeIntervalSince1970: usage.since / 1000).formatted())")
                             .font(.system(size: 10)).foregroundColor(.secondary)
-                        Text("HTTPS payloads through this Mac, including device traffic. Excludes headers/TLS overhead; not the provider’s billing total.")
-                            .font(.system(size: 10)).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
                     }
                     Divider()
                     HStack {
@@ -658,9 +690,9 @@ struct DevicePanelView: View {
                     }
                     HStack {
                         Button("Start") { Task { await model.controlDevSpace(start: true) } }
-                            .disabled(model.busy || model.devspace.connected)
+                            .disabled(model.busy || model.workspaceDirectories.busy || model.devspace.connected)
                         Button("Stop") { model.confirmStop = true }
-                            .disabled(model.busy || !model.devspace.connected || !model.devspaceManaged)
+                            .disabled(model.busy || model.workspaceDirectories.busy || !model.devspace.connected || !model.devspaceManaged)
                         Spacer()
                         Button("Diagnose") { Task { await model.diagnose() } }
                             .disabled(model.busy)
@@ -674,11 +706,21 @@ struct DevicePanelView: View {
                         Text("This may disconnect Codas MCP until DevSpace is restarted. Router will not be stopped.")
                     }
                 }
-                if !device.isThisDevice {
-                    Divider()
-                    Text("Device management").font(.system(size:12,weight:.medium))
-                    Text("Secure removal is not available on the current Router. A device's existing authorization is not revoked by hiding its record.")
-                        .font(.system(size:11)).foregroundColor(codasMuted).fixedSize(horizontal:false,vertical:true)
+                surface {
+                    DisclosureGroup(isExpanded: $model.showingTechnicalDetails) {
+                        VStack(alignment:.leading,spacing:9) {
+                            information("Platform", device.platform)
+                            information("Device ID", device.id)
+                            if let identity = device.installationId { information("Installation", identity) }
+                            if let last = device.lastSeenAt { information("Last seen", Date(timeIntervalSince1970:last/1000).formatted()) }
+                            if !device.isThisDevice {
+                                Text("Secure removal is not supported by this Router.").foregroundColor(codasMuted).fixedSize(horizontal:false,vertical:true)
+                            } else {
+                                Text("Usage measures HTTPS payloads, not provider billing or TLS overhead.").foregroundColor(codasMuted).fixedSize(horizontal:false,vertical:true)
+                            }
+                        }.font(.system(size:11)).padding(.top,9)
+                    } label: { Text("Technical information").font(.system(size:12,weight:.medium)) }
+                    .padding(12)
                 }
                 if !model.actionMessage.isEmpty {
                     Text(model.actionMessage).font(.system(size: 11))
@@ -706,8 +748,8 @@ struct DevicePanelView: View {
             HStack(spacing:9) {
                 CodasPeerBadge()
                 VStack(alignment:.leading,spacing:3) {
-                    Text("Codas.").font(.system(size:19,weight:.bold)).tracking(-0.9)
-                    Text("YOUR DEVICE NETWORK").font(.system(size:9,weight:.medium)).tracking(0.5)
+                    Text("Codas").font(.system(size:19,weight:.bold)).tracking(-0.9)
+                    Text("MACOS · YOUR DEVICE NETWORK").font(.system(size:9,weight:.medium)).tracking(0.5)
                         .foregroundColor(codasMuted)
                 }
                 Spacer()
@@ -730,10 +772,11 @@ struct DevicePanelView: View {
             .padding(.horizontal,16)
             .frame(height:66)
             .accessibilityIdentifier("panel-header")
-            if model.showingEnrollment || model.showingRequests || model.selectedDeviceID != nil {
+            if model.showingDirectories || model.showingEnrollment || model.showingRequests || model.selectedDeviceID != nil {
                 HStack(spacing: 9) {
                     Button {
-                        if model.showingEnrollment { model.closeEnrollment() }
+                        if model.showingDirectories { model.showingDirectories = false }
+                        else if model.showingEnrollment { model.closeEnrollment() }
                         else if model.showingRequests { model.showingRequests = false }
                         else { model.selectedDeviceID = nil; model.actionMessage = "" }
                     } label: {
@@ -742,7 +785,7 @@ struct DevicePanelView: View {
                     }.buttonStyle(.plain)
                     .accessibilityIdentifier("panel-back")
                     Spacer(minLength:0)
-                    Text(model.showingEnrollment ? "Add device" : model.showingRequests ? "HTTPS requests" : "Device details")
+                    Text(model.showingDirectories ? "Working directories" : model.showingEnrollment ? "Add device" : model.showingRequests ? "HTTPS requests" : "Device details")
                         .font(.system(size:12,weight:.medium)).foregroundColor(codasMuted).lineLimit(1)
                 }
                 .padding(.horizontal,16).frame(height:38)
@@ -750,14 +793,15 @@ struct DevicePanelView: View {
             }
             ScrollView {
                 Group {
-                    if model.showingEnrollment { enrollment }
+                    if model.showingDirectories { WorkspaceDirectoriesView(model: model.workspaceDirectories) }
+                    else if model.showingEnrollment { enrollment }
                     else if model.showingRequests { requestDetail }
                     else if model.selectedDeviceID != nil { detail }
                     else { listing }
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .id(model.showingEnrollment ? "enrollment" : model.showingRequests ? "requests" : model.selectedDeviceID.map { "device:\($0)" } ?? "devices")
+            .id(model.showingDirectories ? "directories" : model.showingEnrollment ? "enrollment" : model.showingRequests ? "requests" : model.selectedDeviceID.map { "device:\($0)" } ?? "devices")
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .accessibilityIdentifier("panel-scroll")
             Divider().overlay(codasLine)
@@ -766,7 +810,7 @@ struct DevicePanelView: View {
                      ?? "Local status only")
                     .font(.system(size:10)).foregroundColor(codasMuted)
                 Spacer()
-                Button("Quit") { NSApplication.shared.terminate(nil) }
+                Button("Quit") { if !model.workspaceDirectories.busy { NSApplication.shared.terminate(nil) } }
                     .font(.system(size:11)).buttonStyle(.plain)
             }
             .padding(.horizontal,16).frame(height:36)

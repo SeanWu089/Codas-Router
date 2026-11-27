@@ -1,5 +1,12 @@
 # Changelog
 
+## Codas macOS 0.3.14 / build 18 — candidate, 2026-11-27
+
+- Simplify device details and fold technical identifiers; preserve truthful heartbeat and execution status.
+- Use the shared Codas display name and canonical brand SVG-derived app icon while preserving the compatible installation identity.
+- Add native local working-directory selection, review and macOS owner-authentication prompt. Guard configuration edits, restart the verified managed backend, and require positive and negative workspace-admission verification. Preserve or restore the prior configuration on failure; block on unresolved recovery.
+- The candidate adds roots only. Secure removal, stale-session enforcement and OS-level command confinement are not implemented. Physical installation and user acceptance are separate from automated tests.
+
 ## Codas-mac 0.3.13 / build 17 — 2026-11-26
 
 - Refresh the native menu popover and add local settings and enrollment guidance.

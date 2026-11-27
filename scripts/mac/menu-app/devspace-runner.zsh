@@ -5,8 +5,8 @@ set -euo pipefail
 setopt NULL_GLOB
 
 mode="${1:---diagnose}"
-if [[ "$mode" != "--diagnose" && "$mode" != "--serve" ]]; then
-  print -u2 -- 'Usage: devspace-runner.zsh --diagnose|--serve'
+if [[ "$mode" != "--diagnose" && "$mode" != "--serve" && "$mode" != "--workspace-root-helper" ]]; then
+  print -u2 -- 'Usage: devspace-runner.zsh --diagnose|--serve|--workspace-root-helper'
   exit 2
 fi
 
@@ -84,6 +84,12 @@ fi
 if [[ "$mode" == '--diagnose' ]]; then
   print -r -- "READY: Node $node; DevSpace $cli ($version_output)"
   exit 0
+fi
+
+if [[ "$mode" == '--workspace-root-helper' ]]; then
+  script="${0:A:h}/root-policy/workspace-root-helper.mjs"
+  [[ -f "$script" ]] || { print -u2 -- 'Bundled workspace helper missing'; exit 23; }
+  exec "$node" "$script" "${cli:h:h}"
 fi
 
 # launchd has a very small default PATH. Preserve common tool locations for

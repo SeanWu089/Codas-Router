@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import re
 import shutil
 import stat
 import subprocess
@@ -65,14 +66,18 @@ def inspect_bundle(app, candidate=False):
     if not build.isdecimal():
         raise RuntimeError(f"Unrecognized build number: {app}")
     if candidate:
-        expected = {"CFBundleName": "Codas-mac", "CFBundleDisplayName": "Codas-mac",
-                    "CFBundleShortVersionString": "0.3.13", "CFBundleVersion": "17",
+        expected = {"CFBundleName": "Codas", "CFBundleDisplayName": "Codas",
+                    "CFBundleShortVersionString": "0.3.14", "CFBundleVersion": "18",
                     "CFBundleExecutable": "CodasMac"}
         if any(str(info.get(k, "")) != v for k, v in expected.items()):
-            raise RuntimeError("Candidate metadata is not Codas-mac 0.3.13/build 17.")
+            raise RuntimeError("Candidate metadata is not Codas 0.3.14/build 18.")
+        if info.get("CodasSourceState") != "clean" or not re.fullmatch(r"[0-9a-f]{40}", str(info.get("CodasSourceCommit", ""))):
+            raise RuntimeError("Candidate must identify a clean committed source checkpoint.")
         if not os.access(app / "Contents/Helpers/CodasMenuLauncher", os.X_OK):
             raise RuntimeError("Candidate lacks the exact-path native launcher.")
-        run("/usr/bin/codesign", "--verify", "--strict", app)
+        if not os.access(app / "Contents/Helpers/CodasWorkspaceApproval", os.X_OK) or not (app / "Contents/Resources/root-policy/workspace-root-helper.mjs").is_file():
+            raise RuntimeError("Candidate lacks the native approval helper or workspace policy resources.")
+        run("/usr/bin/codesign", "--verify", "--deep", "--strict", app)
     return info, snapshot(app)
 
 
@@ -224,7 +229,7 @@ def _apply_locked(source, source_files, target, obsolete, agent, config, support
                     raise RuntimeError("The running bundle is absent on disk.")
                 continue
             info, files = inspect_bundle(path)
-            if int(info["CFBundleVersion"]) > 16:
+            if int(info["CFBundleVersion"]) > 18:
                 raise RuntimeError("The existing bundle is newer than this candidate.")
             expected_exe = str(path / "Contents/MacOS" / info["CFBundleExecutable"])
             if any(a["executable_path"] != expected_exe for a in running):
@@ -387,7 +392,8 @@ def _apply_locked(source, source_files, target, obsolete, agent, config, support
             shutil.rmtree(stage)
 
     # COMMIT BOUNDARY: verified installation/startup must not be rolled back for optional legacy cleanup.
-    result = {"installer_revision": 2, "status": "installed", "version": "0.3.13", "build": "17", "process": second,
+    source_commit = plistlib.loads((source / "Contents/Info.plist").read_bytes()).get("CodasSourceCommit")
+    result = {"installer_revision": 2, "status": "installed", "version": "0.3.14", "build": "18", "source_commit": source_commit, "process": second,
               "startup_plist": str(agent), "backup": str(backup),
               "previous_target_holding": str(previous_target_hold) if core_moved else None,
               "cleanup_deferred": deferred, "cleanup_completed": completed,
@@ -433,7 +439,7 @@ def _apply_locked(source, source_files, target, obsolete, agent, config, support
 
 
 def process_source(args, source, origin):
-    _, source_files = inspect_bundle(source, candidate=True)
+    info, source_files = inspect_bundle(source, candidate=True)
     home = Path.home()
     target = home / "Applications/Codas-mac.app"
     obsolete = list(dict.fromkeys([home / "Applications/CodasSol-mac.app",
@@ -449,7 +455,8 @@ def process_source(args, source, origin):
     if not args.apply:
         # Do not stat/read destination paths here: the plan works in a source-only workspace.
         print(json.dumps({"mode": "plan_only", "installer_revision": 2, "source": str(origin), "candidate": str(source),
-                          "version": "0.3.13", "build": "17",
+                          "version": "0.3.14", "build": "18",
+                          "source_commit": info["CodasSourceCommit"],
                           "candidate_binary_sha256": source_files["Contents/MacOS/CodasMac"][0],
                           "target": str(target), "explicit_obsolete_apps": [str(p) for p in obsolete],
                           "startup_plist": str(agent), "startup": config,
