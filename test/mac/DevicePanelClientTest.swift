@@ -114,6 +114,16 @@ struct DevicePanelClientTest {
         precondition(!ExternalConnectivity(chatGPT: true, ingress: false, checkedAt: now).ready(at: now))
         precondition(verifiedLocal.withExternalUnavailable().displaySeverity == .caution)
         precondition(verifiedLocal.withUnknownStatus().displaySeverity == .unknown)
+        let ingressFile = URL(fileURLWithPath: state.path + ".public-health-url")
+        defer { try? FileManager.default.removeItem(at: ingressFile) }
+        precondition(DeviceDirectoryClient.configuredIngress(file: ingressFile) == nil)
+        try "https://router.example.com/_codassol/health\n".write(to: ingressFile, atomically: true, encoding: .utf8)
+        precondition(DeviceDirectoryClient.configuredIngress(file: ingressFile)?.absoluteString == "https://router.example.com/_codassol/health")
+        for invalid in ["http://router.example.com/_codassol/health", "https://user:pass@router.example.com/_codassol/health", "https://router.example.com/mcp", "https://router.example.com/_codassol/health?token=secret"] {
+            try invalid.write(to: ingressFile, atomically: true, encoding: .utf8)
+            precondition(DeviceDirectoryClient.configuredIngress(file: ingressFile) == nil)
+        }
+        print("PASS: provider-neutral HTTPS health config, missing and invalid URL handling")
         let base = "http://127.0.0.1:\(livePort)/probe/"
         func probe(_ path: String) -> URL { URL(string: base + path)! }
         let up = await api.externalConnectivity(chatURL: probe("ok"), ingressURL: probe("ok"))

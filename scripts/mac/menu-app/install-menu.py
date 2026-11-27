@@ -66,10 +66,10 @@ def inspect_bundle(app, candidate=False):
         raise RuntimeError(f"Unrecognized build number: {app}")
     if candidate:
         expected = {"CFBundleName": "Codas-mac", "CFBundleDisplayName": "Codas-mac",
-                    "CFBundleShortVersionString": "0.3.12", "CFBundleVersion": "16",
+                    "CFBundleShortVersionString": "0.3.13", "CFBundleVersion": "17",
                     "CFBundleExecutable": "CodasMac"}
         if any(str(info.get(k, "")) != v for k, v in expected.items()):
-            raise RuntimeError("Candidate metadata is not Codas-mac 0.3.12/build 16.")
+            raise RuntimeError("Candidate metadata is not Codas-mac 0.3.13/build 17.")
         if not os.access(app / "Contents/Helpers/CodasMenuLauncher", os.X_OK):
             raise RuntimeError("Candidate lacks the exact-path native launcher.")
         run("/usr/bin/codesign", "--verify", "--strict", app)
@@ -387,7 +387,7 @@ def _apply_locked(source, source_files, target, obsolete, agent, config, support
             shutil.rmtree(stage)
 
     # COMMIT BOUNDARY: verified installation/startup must not be rolled back for optional legacy cleanup.
-    result = {"installer_revision": 2, "status": "installed", "version": "0.3.12", "build": "16", "process": second,
+    result = {"installer_revision": 2, "status": "installed", "version": "0.3.13", "build": "17", "process": second,
               "startup_plist": str(agent), "backup": str(backup),
               "previous_target_holding": str(previous_target_hold) if core_moved else None,
               "cleanup_deferred": deferred, "cleanup_completed": completed,
@@ -449,7 +449,7 @@ def process_source(args, source, origin):
     if not args.apply:
         # Do not stat/read destination paths here: the plan works in a source-only workspace.
         print(json.dumps({"mode": "plan_only", "installer_revision": 2, "source": str(origin), "candidate": str(source),
-                          "version": "0.3.12", "build": "16",
+                          "version": "0.3.13", "build": "17",
                           "candidate_binary_sha256": source_files["Contents/MacOS/CodasMac"][0],
                           "target": str(target), "explicit_obsolete_apps": [str(p) for p in obsolete],
                           "startup_plist": str(agent), "startup": config,

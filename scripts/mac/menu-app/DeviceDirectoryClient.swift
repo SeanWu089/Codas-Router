@@ -141,6 +141,20 @@ struct DeviceDirectoryClient {
             .appendingPathComponent(".codassol/router.json")
     }
 
+    /// Read the existing enrollment code only after an explicit reveal in the
+    /// local menu. Never rotate it, send it to another host or log its contents.
+    func existingPairingCode() throws -> String {
+        guard let data = try? Data(contentsOf: stateFile),
+              let record = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let token = record["pairingToken"] as? String,
+              token.count >= 16, token.count <= 256,
+              token.utf8.allSatisfy({ (48...57).contains($0) || (65...90).contains($0)
+                  || (97...122).contains($0) || $0 == 45 || $0 == 95 }) else {
+            throw DirectoryFailure.requestFailed("Local pairing code unavailable.")
+        }
+        return token
+    }
+
     private func adminToken() throws -> String {
         guard let data = try? Data(contentsOf: stateFile),
               let record = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -305,22 +319,20 @@ struct ExternalConnectivity {
 }
 
 extension DeviceDirectoryClient {
-    static func configuredIngress() -> URL? {
-        let file = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/LaunchAgents/com.codassol.ngrok.ingress.plist")
-        guard let data = try? Data(contentsOf: file),
-              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
-              let env = plist["EnvironmentVariables"] as? [String: String],
-              let raw = env["CODASSOL_PUBLIC_URL"], let url = URL(string: raw),
-              url.scheme == "https", url.host != nil, url.user == nil, url.password == nil else { return nil }
-        return url.appendingPathComponent("_codassol/health")
+    static func configuredIngress(file: URL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent(".codassol/public-health-url")) -> URL? {
+        guard let raw = try? String(contentsOf: file, encoding: .utf8),
+              let url = URL(string: raw.trimmingCharacters(in: .whitespacesAndNewlines)),
+              url.scheme == "https", url.host != nil, url.user == nil, url.password == nil,
+              url.query == nil, url.fragment == nil, url.path == "/_codassol/health" else { return nil }
+        return url
     }
 
     func externalConnectivity(chatURL: URL = URL(string: "https://chatgpt.com/robots.txt")!,
                               ingressURL: URL? = DeviceDirectoryClient.configuredIngress(),
                               previous: ExternalConnectivity? = nil) async -> ExternalConnectivity {
         async let chat = probeExternal(chatURL, health: false)
-        // The free public ingress has a request quota. Reuse its result for at most
+        // Avoid unnecessary public probes. Reuse the successful result for at most
         // five minutes; network changes and manual refresh discard this snapshot.
         if let previous, Date().timeIntervalSince(previous.ingressCheckedAt) < (previous.ingress ? 300 : 30) {
             return await ExternalConnectivity(chatGPT: chat, ingress: previous.ingress,
@@ -334,7 +346,6 @@ extension DeviceDirectoryClient {
         guard let url else { return false }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 4)
         request.httpMethod = health ? "GET" : "HEAD"
-        if health { request.setValue("true", forHTTPHeaderField: "ngrok-skip-browser-warning") }
         do {
             let (data, response) = try await Self.session.data(for: request)
             guard let http = response as? HTTPURLResponse, http.statusCode == 200,

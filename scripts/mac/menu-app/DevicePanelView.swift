@@ -21,6 +21,27 @@ final class DevicePanelModel: ObservableObject {
     @Published private(set) var router = RouterHealth(connected: false, backendReachable: false)
     @Published private(set) var devspaceManaged = false
     @Published var showingRequests = false
+    @Published var panelVisible = false
+    @Published var showingEnrollment = false
+    @Published private(set) var enrollmentCode: String?
+    @Published private(set) var enrollmentError = ""
+
+    func enrollmentCodeHidden() { enrollmentCode = nil; enrollmentError = "" }
+
+    func closeEnrollment() {
+        enrollmentCode = nil
+        enrollmentError = ""
+        showingEnrollment = false
+    }
+
+    func revealEnrollmentCode() {
+        guard localHealthIsFresh && router.connected else {
+            enrollmentError = "Local Router is not ready."
+            return
+        }
+        do { enrollmentCode = try client.existingPairingCode(); enrollmentError = "" }
+        catch { enrollmentError = "Pairing code unavailable. Check your local Router configuration." }
+    }
     @Published var selectedDeviceID: String?
     @Published var renameText = ""
     @Published var actionMessage = ""
@@ -204,12 +225,87 @@ final class DevicePanelModel: ObservableObject {
     }
 }
 
+// The PEER mark uses the exact geometry of assets/brand/codas-peer.svg.
+// Menu bar: template artwork; the in-panel icon stays monochrome by design.
+enum CodasPeerArtwork {
+    static let dots: [(CGFloat, CGFloat, CGFloat)] = [
+        (60,27,10),(25,87,10),(48.3,47,4),(36.7,67,4),
+        (48.3,87,4),(71.7,87,4),(71.7,47,4),(83.3,67,4),(95,87,10)
+    ]
+    @MainActor static func templateImage() -> NSImage {
+        let image = NSImage(size: NSSize(width: 21, height: 21), flipped: true) { rect in
+            NSColor.black.setFill()
+            let scale = min(rect.width, rect.height) / 120
+            for (x,y,r) in dots {
+                NSBezierPath(ovalIn: NSRect(x: rect.minX + (x-r)*scale,
+                    y: rect.minY + (y-r)*scale, width: r*2*scale, height: r*2*scale)).fill()
+            }
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+}
+
+private let codasPaper = Color(red: 246/255, green: 246/255, blue: 242/255)
+private let codasInk = Color(red: 27/255, green: 28/255, blue: 26/255)
+private let codasMuted = Color(red: 111/255, green: 115/255, blue: 108/255)
+private let codasLine = Color(red: 228/255, green: 229/255, blue: 222/255)
+private let codasAccent = Color(red: 217/255, green: 52/255, blue: 43/255)
+
+private struct CodasPeerBadge: View {
+    var body: some View {
+        Canvas { context, size in
+            let scale = min(size.width,size.height)/120
+            for (x,y,r) in CodasPeerArtwork.dots {
+                context.fill(Path(ellipseIn: CGRect(x:(x-r)*scale, y:(y-r)*scale,
+                    width:r*2*scale,height:r*2*scale)),with:.color(codasPaper))
+            }
+        }
+        .frame(width:33,height:33)
+        .background(codasInk,in:RoundedRectangle(cornerRadius:9))
+        .accessibilityHidden(true)
+    }
+}
+
+private struct CodasNetworkArt: View {
+    let active: Bool
+    let animate: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0/12, paused: !animate || !active || reduceMotion)) { frame in
+            Canvas { context, size in
+                let scale = min(size.width/120,size.height/100)
+                let t = frame.date.timeIntervalSinceReferenceDate
+                let pulse = active && animate && !reduceMotion ? (sin(t * 2.8) + 1) / 2 : 0.5
+                let points: [(CGFloat,CGFloat,CGFloat)] = [
+                    (60,20,8),(20,80,8),(100,80,8),(47,40,3),(34,60,3),
+                    (46,80,3),(73,80,3),(73,40,3),(86,60,3)]
+                for (i, point) in points.enumerated() {
+                    let (x,y,r) = point
+                    let color = i == 2 && active ? codasAccent : i < 3 ? codasPaper : Color.white.opacity(0.24)
+                    context.fill(Path(ellipseIn:CGRect(x:(x-r)*scale,y:(y-r)*scale,
+                        width:2*r*scale,height:2*r*scale)), with:.color(color))
+                }
+                if active {
+                    let radius = CGFloat(12 + 3*pulse)
+                    context.stroke(Path(ellipseIn:CGRect(x:(100-radius)*scale,y:(80-radius)*scale,
+                        width:radius*2*scale,height:radius*2*scale)),
+                        with:.color(codasAccent.opacity(0.3+0.7*pulse)),lineWidth:1)
+                }
+            }
+        }
+        .frame(width:109,height:90)
+        .accessibilityHidden(true)
+    }
+}
+
 private func statusColor(_ severity: DeviceInfo.DisplaySeverity) -> Color {
     switch severity {
-    case .ready, .connected: return .green
+    case .ready, .connected: return Color(red:0.29, green:0.58, blue:0.43)
     case .caution: return .orange
-    case .offline: return .gray
-    case .unknown: return .secondary
+    case .offline, .unknown: return codasMuted
     }
 }
 
@@ -217,41 +313,97 @@ struct DevicePanelView: View {
     @ObservedObject var model: DevicePanelModel
     var size = DevicePanelLayout.preferredSize
 
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title).font(.system(size: 10, weight: .semibold))
-            .foregroundColor(.secondary)
-            .tracking(1.2)
-            .padding(.horizontal, 17)
-            .padding(.top, 15)
-            .padding(.bottom, 6)
+    private var onlineCount: Int {
+        ([model.local] + model.others).filter {
+            $0.displaySeverity == .ready || $0.displaySeverity == .connected
+        }.count
+    }
+
+    private func sectionTitle(_ title: String, trailing: String? = nil) -> some View {
+        HStack {
+            Text(title).font(.system(size: 10, weight: .semibold)).tracking(1.1)
+            Spacer()
+            if let trailing { Text(trailing).font(.system(size: 10, weight: .medium)).monospacedDigit() }
+        }.foregroundColor(codasMuted).padding(.top,15).padding(.bottom,6)
+    }
+
+    private func deviceSymbol(_ device: DeviceInfo) -> String {
+        switch device.platform {
+        case "android", "ios": return "iphone"
+        case "win32", "windows": return "desktopcomputer"
+        default: return "laptopcomputer"
+        }
+    }
+
+    private func platformTitle(_ device: DeviceInfo) -> String {
+        let platform: String
+        switch device.platform {
+        case "darwin", "macos": platform = "macOS"
+        case "win32", "windows": platform = "Windows"
+        case "android": platform = "Android"
+        case "ios": platform = "iOS"
+        case "linux": platform = "Linux"
+        default: platform = device.platform
+        }
+        return platform + " · " + (device.kind == "agent" ? "Agent" : "Router")
+    }
+
+    private var networkSummary: some View {
+        HStack(spacing:8) {
+            VStack(alignment:.leading,spacing:4) {
+                Text("NETWORK STATUS")
+                    .font(.system(size:9,weight:.semibold)).tracking(1.2)
+                    .foregroundColor(.white.opacity(0.58))
+                HStack(alignment:.firstTextBaseline,spacing:5) {
+                    Text(String(onlineCount)).font(.system(size:36,weight:.semibold)).tracking(-1.5)
+                    Text("/ \(1+model.others.count)").font(.system(size:20,weight:.regular))
+                        .foregroundColor(.white.opacity(0.55))
+                }.monospacedDigit().foregroundColor(codasPaper)
+                Text(model.connectionStatus.title).font(.system(size:11))
+                    .foregroundColor(.white.opacity(0.72))
+            }
+            Spacer(minLength:0)
+            CodasNetworkArt(active: onlineCount > 0, animate: model.panelVisible)
+        }
+        .padding(15)
+        .frame(minHeight:109)
+        .background(codasInk,in:RoundedRectangle(cornerRadius:15))
+        .accessibilityElement(children:.combine)
+        .accessibilityLabel("\(onlineCount) of \(1+model.others.count) devices online. \(model.connectionStatus.title)")
     }
 
     private func deviceRow(_ device: DeviceInfo) -> some View {
-        Button {
-            model.choose(device)
-        } label: {
-            HStack(spacing: 11) {
-                Image(systemName: device.platform == "android" ? "iphone" : "laptopcomputer")
+        Button { model.choose(device) } label: {
+            HStack(spacing: 10) {
+                Image(systemName: deviceSymbol(device))
                     .font(.system(size: 16, weight: .regular))
-                    .foregroundColor(.secondary)
-                    .frame(width: 27)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(device.name).font(.system(size: 13, weight: .medium))
-                        .lineLimit(1)
-                    if device.isThisDevice { Text("This device").font(.system(size: 10)).foregroundColor(.secondary) }
+                    .foregroundColor(codasInk)
+                    .frame(width: 32,height:32)
+                    .background(codasPaper,in:RoundedRectangle(cornerRadius:8))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(device.name).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+                    Text(platformTitle(device)).font(.system(size: 10))
+                        .foregroundColor(codasMuted).lineLimit(1)
                 }
-                Spacer(minLength: 6)
-                Circle().fill(statusColor(device.displaySeverity)).frame(width: 7, height: 7)
+                Spacer(minLength: 4)
+                Circle().fill(statusColor(device.displaySeverity)).frame(width: 6, height: 6)
                 Text(device.displayTitle)
-                    .font(.system(size: 11)).foregroundColor(.secondary)
+                    .font(.system(size: 10)).foregroundColor(codasMuted).lineLimit(1)
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 9, weight: .semibold)).foregroundColor(.secondary)
+                    .font(.system(size: 9, weight: .semibold)).foregroundColor(codasMuted)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func surface<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .background(Color.white,in:RoundedRectangle(cornerRadius:12))
+            .clipShape(RoundedRectangle(cornerRadius:12))
+            .overlay(RoundedRectangle(cornerRadius:12).strokeBorder(codasLine,lineWidth:1))
     }
 
     private var directoryNotice: some View {
@@ -280,55 +432,108 @@ struct DevicePanelView: View {
 
     private var listing: some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionTitle("THIS DEVICE")
-            deviceRow(model.local)
-            Divider().padding(.horizontal, 16).padding(.top, 7)
-            sectionTitle("OTHER DEVICES")
-            if model.others.isEmpty && model.directoryMessage.isEmpty {
-                Text("No other registered devices yet")
-                    .font(.system(size: 12)).foregroundColor(.secondary)
-                    .padding(.horizontal, 18).padding(.vertical, 12)
-            } else {
-                ForEach(model.others) { device in deviceRow(device) }
+            networkSummary
+            sectionTitle("THIS DEVICE", trailing: model.local.kind == "router" ? "ROUTER" : "AGENT")
+            surface { deviceRow(model.local) }
+            sectionTitle("OTHER DEVICES", trailing: String(format:"%02d",model.others.count))
+            surface {
+                VStack(spacing:0) {
+                    if model.others.isEmpty {
+                        Text("No other registered devices")
+                            .font(.system(size: 12)).foregroundColor(codasMuted)
+                            .frame(maxWidth:.infinity,alignment:.leading).padding(14)
+                    } else {
+                        ForEach(model.others) { device in
+                            if device.id != model.others.first?.id { Divider().padding(.horizontal,10) }
+                            deviceRow(device)
+                        }
+                    }
+                }
             }
             if model.others.count > 5 {
-                Text("Menu bar shows 5 of \(model.others.count) devices · hover for dot order")
-                    .font(.system(size: 11)).foregroundColor(.secondary)
-                    .padding(.horizontal, 18).padding(.vertical, 6)
+                Text("Menu bar shows the first 5 devices · hover for dot order")
+                    .font(.system(size: 10)).foregroundColor(codasMuted).padding(.top,6)
             }
             if !model.directoryMessage.isEmpty { directoryNotice }
-            Divider().padding(.horizontal, 16).padding(.top, 7)
-            sectionTitle("CODAS USAGE")
-            usageSummary.padding(.horizontal, 17).padding(.bottom, 12)
-        }
+            sectionTitle("CODAS USAGE", trailing:"TOTAL")
+            usageSummary
+            Button {
+                model.closeEnrollment()
+                model.showingEnrollment = true
+            } label: {
+                HStack(spacing:7) {
+                    Image(systemName:"plus").font(.system(size:12,weight:.medium))
+                    Text("Add device").font(.system(size:12,weight:.semibold))
+                }.foregroundColor(codasPaper)
+                    .frame(maxWidth:.infinity).padding(.vertical,12)
+                    .background(codasInk,in:RoundedRectangle(cornerRadius:11))
+                    .contentShape(Rectangle())
+            }.buttonStyle(.plain).padding(.top,14)
+        }.padding(.horizontal,16).padding(.bottom,14).padding(.top,4)
+    }
+
+    private func metricCard(_ label: String, value: String, suffix: String, arrow: Bool = false) -> some View {
+        VStack(alignment:.leading,spacing:6) {
+            HStack(spacing:3) {
+                Text(label).font(.system(size:9,weight:.medium)).lineLimit(1)
+                Spacer(minLength:0)
+                if arrow { Image(systemName:"chevron.right").font(.system(size:8,weight:.medium)) }
+            }.foregroundColor(codasMuted)
+            Text(value).font(.system(size:21,weight:.semibold))
+                .monospacedDigit().tracking(-0.7).lineLimit(1).minimumScaleFactor(0.65)
+            Text(suffix).font(.system(size:9)).foregroundColor(codasMuted)
+                .monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
+        }.frame(maxWidth:.infinity,alignment:.leading).padding(11)
+            .background(codasPaper,in:RoundedRectangle(cornerRadius:11))
+            .overlay(RoundedRectangle(cornerRadius:11).strokeBorder(codasLine,lineWidth:1))
     }
 
     private var usageSummary: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Button { model.showingRequests = true } label: {
-                HStack {
-                    Text("HTTPS requests")
-                    Spacer()
-                    Text(model.usageAvailable ? model.usage!.httpsRequests.formatted() : "—").monospacedDigit()
-                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(.secondary)
-                }.contentShape(Rectangle())
-            }.buttonStyle(.plain).disabled(!model.usageAvailable)
-            HStack {
-                Text("Data transferred")
-                Spacer()
-                Text(model.usageAvailable ? TrafficSnapshot.bytes(model.usage!.totalBytes) : "—").monospacedDigit()
+        VStack(alignment:.leading,spacing:6) {
+            HStack(spacing:8) {
+                Button { model.showingRequests = true } label: {
+                    metricCard("HTTPS REQUESTS", value: model.usageAvailable ? model.usage!.httpsRequests.formatted() : "—",
+                        suffix: "All requests", arrow:true)
+                }.buttonStyle(.plain).disabled(!model.usageAvailable)
+                metricCard("TRANSFERRED", value: model.usageAvailable ? TrafficSnapshot.bytes(model.usage!.totalBytes) : "—",
+                    suffix: model.usageAvailable ? "↑ \(TrafficSnapshot.bytes(Int64(model.sentRate)))/s  ↓ \(TrafficSnapshot.bytes(Int64(model.receivedRate)))/s" : "Unavailable")
             }
-            if model.usageAvailable {
-                Text("↓ \(TrafficSnapshot.bytes(Int64(model.receivedRate)))/s   ↑ \(TrafficSnapshot.bytes(Int64(model.sentRate)))/s")
-                    .foregroundColor(.secondary).monospacedDigit()
-                if model.usage?.persistenceError == true {
-                    Text("History could not be saved").foregroundColor(.orange)
-                }
+            if model.usage?.persistenceError == true {
+                Text("History could not be saved").font(.system(size:10)).foregroundColor(.orange)
+            }
+            if !model.usageAvailable {
+                Text("Usage unavailable").font(.system(size:10)).foregroundColor(codasMuted)
+            }
+        }
+    }
+
+    private var enrollment: some View {
+        VStack(alignment:.leading,spacing:12) {
+            Text("Add a device").font(.system(size:18,weight:.semibold))
+            Text("Install Codas on the new device. Enter the existing Router pairing code in its settings and authorize a dedicated workspace.")
+                .font(.system(size:12)).foregroundColor(codasMuted).fixedSize(horizontal:false,vertical:true)
+            if let endpoint = DeviceDirectoryClient.configuredIngress()?.deletingLastPathComponent() {
+                Text("CURRENT ROUTER").font(.system(size:10,weight:.semibold)).tracking(1).foregroundColor(codasMuted)
+                Text(endpoint.absoluteString).font(.system(size:11,design:.monospaced)).textSelection(.enabled)
+                    .fixedSize(horizontal:false,vertical:true)
+            }
+            if let code = model.enrollmentCode {
+                Text("CURRENT PAIRING CODE").font(.system(size:10,weight:.semibold)).tracking(1).foregroundColor(codasMuted)
+                Text(code).font(.system(size:12,design:.monospaced)).textSelection(.enabled)
+                    .fixedSize(horizontal:false,vertical:true)
+                    .padding(10).frame(maxWidth:.infinity,alignment:.leading)
+                    .background(Color.white,in:RoundedRectangle(cornerRadius:9))
+                Button("Hide code") { model.enrollmentCodeHidden() }.buttonStyle(.borderless)
             } else {
-                Text("Usage unavailable").foregroundColor(.secondary)
+                Button("Reveal pairing code") { model.revealEnrollmentCode() }
+                    .disabled(!model.localHealthIsFresh || !model.router.connected)
             }
-        }.font(.system(size: 11))
+            if !model.enrollmentError.isEmpty {
+                Text(model.enrollmentError).font(.system(size:11)).foregroundColor(codasMuted)
+            }
+            Text("This is the existing private enrollment credential, not a new or single-use code. Keep it private. Secure device removal and identity-preserving re-enrollment require Router support.")
+                .font(.system(size:10)).foregroundColor(codasMuted).fixedSize(horizontal:false,vertical:true)
+        }.padding(17)
     }
 
     private var requestDetail: some View {
@@ -469,6 +674,12 @@ struct DevicePanelView: View {
                         Text("This may disconnect Codas MCP until DevSpace is restarted. Router will not be stopped.")
                     }
                 }
+                if !device.isThisDevice {
+                    Divider()
+                    Text("Device management").font(.system(size:12,weight:.medium))
+                    Text("Secure removal is not available on the current Router. A device's existing authorization is not revoked by hiding its record.")
+                        .font(.system(size:11)).foregroundColor(codasMuted).fixedSize(horizontal:false,vertical:true)
+                }
                 if !model.actionMessage.isEmpty {
                     Text(model.actionMessage).font(.system(size: 11))
                         .foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -492,71 +703,79 @@ struct DevicePanelView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text("Codas-mac").font(.system(size: 16, weight: .semibold))
-                Text("MAC").font(.system(size: 9, weight: .bold))
-                    .foregroundColor(.secondary)
-                Text(model.connectionStatus.title).font(.system(size: 10))
-                    .foregroundColor(model.connectionStatus == .connected ? .green : model.connectionStatus == .partial ? .orange : .secondary)
+            HStack(spacing:9) {
+                CodasPeerBadge()
+                VStack(alignment:.leading,spacing:3) {
+                    Text("Codas.").font(.system(size:19,weight:.bold)).tracking(-0.9)
+                    Text("YOUR DEVICE NETWORK").font(.system(size:9,weight:.medium)).tracking(0.5)
+                        .foregroundColor(codasMuted)
+                }
                 Spacer()
-                Button { model.invalidateConnectivity(); Task { await model.refresh() } } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 12, weight: .medium))
-                }.buttonStyle(.borderless).disabled(model.loading)
+                Button {
+                    model.invalidateConnectivity()
+                    Task { await model.refresh() }
+                } label: {
+                    Image(systemName: "arrow.clockwise").font(.system(size: 13, weight: .medium))
+                        .frame(width:26,height:30)
+                }.buttonStyle(.plain).disabled(model.loading).help("Refresh devices")
+                Button {
+                    model.closeEnrollment()
+                    model.showingRequests = false
+                    model.choose(model.local)
+                } label: {
+                    Image(systemName:"gearshape").font(.system(size:16,weight:.regular))
+                        .frame(width:28,height:30)
+                }.buttonStyle(.plain).help("Local device settings")
             }
-            .padding(.horizontal, 16)
-            .frame(height: 50)
+            .padding(.horizontal,16)
+            .frame(height:66)
             .accessibilityIdentifier("panel-header")
-            Divider()
-            if model.showingRequests || model.selectedDeviceID != nil {
+            if model.showingEnrollment || model.showingRequests || model.selectedDeviceID != nil {
                 HStack(spacing: 9) {
                     Button {
-                        if model.showingRequests { model.showingRequests = false }
+                        if model.showingEnrollment { model.closeEnrollment() }
+                        else if model.showingRequests { model.showingRequests = false }
                         else { model.selectedDeviceID = nil; model.actionMessage = "" }
                     } label: {
                         Label("Back", systemImage: "chevron.left")
                             .padding(.vertical, 6).padding(.horizontal, 3)
                     }.buttonStyle(.plain)
                     .accessibilityIdentifier("panel-back")
-                    Divider().frame(height: 14)
-                    Text(model.showingRequests ? "HTTPS requests" : "Device details")
-                        .font(.system(size: 12, weight: .semibold)).lineLimit(1)
-                    Spacer(minLength: 0)
-                    if model.showingRequests {
-                        Text(model.usageAvailable ? model.usage!.httpsRequests.formatted() : "—")
-                            .font(.system(size: 12)).monospacedDigit()
-                    }
+                    Spacer(minLength:0)
+                    Text(model.showingEnrollment ? "Add device" : model.showingRequests ? "HTTPS requests" : "Device details")
+                        .font(.system(size:12,weight:.medium)).foregroundColor(codasMuted).lineLimit(1)
                 }
-                .padding(.horizontal, 16)
-                .frame(height: 44)
-                Divider()
+                .padding(.horizontal,16).frame(height:38)
+                Divider().overlay(codasLine)
             }
             ScrollView {
                 Group {
-                    if model.showingRequests { requestDetail }
+                    if model.showingEnrollment { enrollment }
+                    else if model.showingRequests { requestDetail }
                     else if model.selectedDeviceID != nil { detail }
                     else { listing }
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .id(model.showingRequests ? "requests" : model.selectedDeviceID.map { "device:\($0)" } ?? "devices")
+            .id(model.showingEnrollment ? "enrollment" : model.showingRequests ? "requests" : model.selectedDeviceID.map { "device:\($0)" } ?? "devices")
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .accessibilityIdentifier("panel-scroll")
-            Divider()
+            Divider().overlay(codasLine)
             HStack {
                 Text(model.lastUpdated.map { "Synced \($0.formatted(date: .omitted, time: .shortened))" }
                      ?? "Local status only")
-                    .font(.system(size: 10)).foregroundColor(.secondary)
+                    .font(.system(size:10)).foregroundColor(codasMuted)
                 Spacer()
                 Button("Quit") { NSApplication.shared.terminate(nil) }
-                    .font(.system(size: 11)).buttonStyle(.plain)
+                    .font(.system(size:11)).buttonStyle(.plain)
             }
-            .padding(.horizontal, 16)
-            .frame(height: 34)
+            .padding(.horizontal,16).frame(height:36)
             .accessibilityIdentifier("panel-footer")
         }
-        .frame(width: size.width, height: size.height, alignment: .top)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .frame(width:size.width,height:size.height,alignment:.top)
+        .foregroundColor(codasInk)
+        .background(codasPaper)
+        .environment(\.colorScheme,.light)
         .onAppear { Task { await model.refresh() } }
     }
 }
