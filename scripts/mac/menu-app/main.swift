@@ -24,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         NSApp.setActivationPolicy(.accessory)
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.title = "◈"
-        statusItem.button?.toolTip = "Codas-mac · Devices"
+        statusItem.button?.toolTip = "Codas · macOS · Devices"
         setStatusIcon()
         statusItem.button?.target = self
         statusItem.button?.action = #selector(togglePanel(_:))
@@ -117,6 +117,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         stopOutsideClickMonitors()
     }
     func applicationDidResignActive(_ notification: Notification) { closePanel() }
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        model.workspaceDirectories.busy ? .terminateCancel : .terminateNow
+    }
     func applicationWillTerminate(_ notification: Notification) {
         stopOutsideClickMonitors()
         timer?.invalidate()

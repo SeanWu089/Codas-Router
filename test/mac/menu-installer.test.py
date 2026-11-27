@@ -37,12 +37,12 @@ class InstallerFaultTests(unittest.TestCase):
                 (path / "Contents/MacOS").mkdir(parents=True)
                 (path / "Contents/Info.plist").write_bytes(plistlib.dumps({
                     "CFBundleIdentifier": "com.codassol.mac", "CFBundleExecutable": executable,
-                    "CFBundleVersion": str(build), "CFBundleShortVersionString": "0.3.13"}))
+                    "CFBundleVersion": str(build), "CFBundleShortVersionString": "0.3.15"}))
                 binary = path / "Contents/MacOS" / executable
                 binary.write_bytes(marker.encode())
                 binary.chmod(0o755)
 
-            make_app(source, 17, "reviewed candidate", "CodasMac")
+            make_app(source, 19, "reviewed candidate", "CodasMac")
             make_app(old, 15, "current working menu")
             if fault in ("partial_legacy", "active_partial_legacy"):
                 (legacy / "Contents/Resources").mkdir(parents=True)
@@ -50,7 +50,7 @@ class InstallerFaultTests(unittest.TestCase):
             else:
                 make_app(legacy, 14, "obsolete backup")
             if existing_target:
-                make_app(target, 15, "previous final target", "CodasMac")
+                make_app(target, 18, "previous final target", "CodasMac")
             source_files, old_files = ns["snapshot"](source), ns["snapshot"](old)
             legacy_files = ns["snapshot"](legacy)
             previous_target_files = ns["snapshot"](target) if existing_target else None

@@ -28,6 +28,10 @@ swiftc \
   "$ROOT/scripts/mac/menu-app/DevSpaceManager.swift" \
   "$ROOT/scripts/mac/menu-app/DevicePanelView.swift" \
   "$ROOT/scripts/mac/menu-app/DevicePanelLayout.swift" \
+  "$ROOT/scripts/mac/menu-app/WorkspaceDirectoryModel.swift" \
+  "$ROOT/scripts/mac/menu-app/WorkspaceDirectoriesView.swift" \
   "$ROOT/test/mac/DevicePanelLayoutTest.swift" \
   -o "$TEST_TEMP/device-panel-layout-test"
 "$TEST_TEMP/device-panel-layout-test" "$(cat "$TEST_TEMP/fixture.port")"
+swiftc "$ROOT/scripts/mac/menu-app/WorkspaceDirectoryModel.swift" "$ROOT/test/mac/WorkspaceDirectoryModelTest.swift" -o "$TEST_TEMP/workspace-directory-model-test"
+"$TEST_TEMP/workspace-directory-model-test"

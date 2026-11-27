@@ -378,12 +378,13 @@ MIT.
 
 </div>
 
-## Codas-mac menu bar controller (v0.3.13)
+## Codas menu bar controller (macOS v0.3.15 candidate)
 
-**Codas-mac** is the native Swift/AppKit menu component, installed at
-`~/Applications/Codas-mac.app`. It keeps the existing blue Finder icon and the
-monochrome menu icon. The app and Router have independent version numbers and
-release cycles.
+**Codas** is the native Swift/AppKit menu component. Its display name and
+full-color app icon use the shared Codas brand; the monochrome menu icon
+uses the same mark. The compatible bundle identifier and installed path
+`~/Applications/Codas-mac.app` are unchanged to preserve login behavior and
+avoid duplicate clients. The app and Router have independent release cycles.
 
 ### Changes in this version
 
@@ -409,6 +410,25 @@ ordering, freshness, scrolling, layout and installer failure recovery.
 Physical reboot acceptance remains a separate check; a successful source
 build alone does not establish that result.
 
+### Working directories (0.3.15 candidate)
+
+Open the menu, select the local Mac or gear, and choose **Working Directories**.
+The list reflects the saved DevSpace configuration, not a claim that every
+configured root is currently usable. **Add Directory** uses a native folder
+picker, an explicit reviewed change and macOS owner authentication. A managed
+DevSpace restart is necessary; choose a time when local work is idle. The
+controller backs up the configuration, retains unrelated settings, and checks
+positive and negative workspace admission through the local Router before
+reporting a committed change. An unrecognized service, changed configuration,
+or unverified recovery blocks further writes.
+
+The first candidate supports owner-controlled project directories inside the
+local home that are already covered by the Router's routing range. It does not
+modify the Router's range, restart Core, expose a remote grant endpoint, or
+claim OS-level shell confinement. Secure root/device removal and stale-session
+revocation remain separate security work. The local owner prompt is not a
+sandbox against another process with the same OS-account privileges.
+
 ### Build, package and install
 
 Use macOS with Apple command line tools (`swiftc`), Python 3 and Node.js 22+.
@@ -420,11 +440,11 @@ npm run test:mac
 zsh scripts/mac/menu-app/build.sh
 ```
 
-The build produces `dist/Codas-mac-0.3.13.zip`. It stages the app without
+The build produces `dist/Codas-mac-0.3.15.zip`. It stages the app without
 installing it. Inspect a candidate-only installation plan with:
 
 ```sh
-python3 scripts/mac/menu-app/install-menu.py --source dist/Codas-mac-0.3.13.zip --plan
+python3 scripts/mac/menu-app/install-menu.py --source dist/Codas-mac-0.3.15.zip --plan
 ```
 
 To install from a locally authorized terminal, replace `--plan` with `--apply`.
@@ -436,7 +456,7 @@ reuse. Installing the menu component does not restart Router or DevSpace.
 For a transferable installer folder:
 
 ```sh
-python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.13.zip --output dist/Codas-mac-0.3.13-installer
+python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.15.zip --output dist/Codas-mac-0.3.15-installer
 ```
 
 The folder contains the signed app ZIP, the installer, its double-clickable

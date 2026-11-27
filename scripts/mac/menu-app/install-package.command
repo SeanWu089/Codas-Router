@@ -54,6 +54,8 @@ try:
     receipt = json.loads(result.stdout)
     if receipt.get("status") not in {"installed", "installed_with_cleanup_pending"}:
         raise RuntimeError("Installer did not report a verified installation")
+    if receipt.get("source_commit") != settings.get("source_commit"):
+        raise RuntimeError("The installed source checkpoint does not match the reviewed package")
     (root / "installation-result.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print("安装完成：Codas-mac " + receipt["version"] + "（build " + receipt["build"] + "）")
     print("正在运行：" + receipt["process"]["bundle_path"])

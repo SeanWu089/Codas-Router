@@ -51,16 +51,13 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Verify device-dot ordering and rendering
-        run: zsh test/mac/device-status-dots.test.sh
-
-      - name: Verify installer recovery
-        run: python3 test/mac/menu-installer.test.py
+      - name: Verify native UI, workspace model, managed launcher and installer recovery
+        run: npm run test:mac
 
       - name: Build signed menu archive
         run: zsh scripts/mac/menu-app/build.sh
 
       - name: Verify portable installer without installing
         run: |
-          python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.13.zip --output dist/Codas-mac-0.3.13-installer
-          zsh dist/Codas-mac-0.3.13-installer/Install-Codas-mac.command --plan
+          python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.15.zip --output dist/Codas-mac-0.3.15-installer
+          zsh dist/Codas-mac-0.3.15-installer/Install-Codas-mac.command --plan

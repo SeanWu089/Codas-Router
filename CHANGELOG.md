@@ -1,5 +1,17 @@
 # Changelog
 
+## Codas macOS 0.3.15 / build 19 — candidate hotfix, 2026-11-27
+
+- Fix the working-directory service ownership preflight to recognize the actual, verified production LaunchAgent runner at `CodasSol/production/bin/devspace-runner.zsh`, alongside the supported legacy runner. Keep other runner paths denied.
+- Add regression coverage for both recognized launch contracts and rejection of an unrelated process. No Router/backend configuration changes or automatic rollout.
+
+## Codas macOS 0.3.14 / build 18 — candidate, 2026-11-27
+
+- Simplify device details and fold technical identifiers; preserve truthful heartbeat and execution status.
+- Use the shared Codas display name and canonical brand SVG-derived app icon while preserving the compatible installation identity.
+- Add native local working-directory selection, review and macOS owner-authentication prompt. Guard configuration edits, restart the verified managed backend, and require positive and negative workspace-admission verification. Preserve or restore the prior configuration on failure; block on unresolved recovery.
+- The candidate adds roots only. Secure removal, stale-session enforcement and OS-level command confinement are not implemented. Physical installation and user acceptance are separate from automated tests.
+
 ## Codas-mac 0.3.13 / build 17 — 2026-11-26
 
 - Refresh the native menu popover and add local settings and enrollment guidance.

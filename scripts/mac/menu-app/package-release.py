@@ -44,6 +44,7 @@ def main():
         settings = {
             "archive": archive_name,
             "sha256": hashlib.sha256((package / archive_name).read_bytes()).hexdigest(),
+            "source_commit": plan["source_commit"],
             "legacy_apps": [],  # User-selected backups may be added via --legacy-app at invocation.
         }
         (package / "install-settings.json").write_text(json.dumps(settings, indent=2) + "\n")
@@ -52,6 +53,7 @@ def main():
         os.rename(package, output)
     print(json.dumps({"package": str(output), "version": plan["version"], "build": plan["build"],
                       "archive": archive_name, "sha256": settings["sha256"],
+                      "source_commit": settings["source_commit"],
                       "installer_revision": plan["installer_revision"],
                       "installer_command": "Install-Codas-mac.command"}, indent=2))
 
