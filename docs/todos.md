@@ -1,5 +1,14 @@
 # Todos
 
+## 2026-11-27 — P0: Local workspace authorization (development checkpoint)
+
+- [x] AUTHZ-01/02 foundation: implement and exercise an isolated root/lease policy and read-only DevSpace configuration-change planner. Preserve current production trust boundaries; do not treat this module as a deployed authorization system.
+- [ ] AUTHZ-02 — Connect the native local folder-selection and review controller to a protected, atomic policy/configuration transaction with backup, change detection, rollback, and Router/backend agreement. Require an explicit non-empty backend root list; never silently grant the home or working directory.
+- [ ] AUTHZ-03 — Choose and implement enforceable least-privilege execution isolation for all file/command/subprocess entry points. Audit direct proxy and peer execution paths, policy storage, link races, and same-account shell access. Until then, do not advertise a filesystem sandbox.
+- [ ] AUTHZ-04 — Integrate scoped grants/leases into actual MCP workspace bindings and peer/agent execution admission, with authoritative revocation and reconnect behavior. Existing in-flight operations need a separate cancellation/drain contract.
+- [ ] AUTHZ-05 — Native Mac Working Directories UI: local folder picker, explicit add/revoke review, restart-required state, safe managed-service restart and fresh allow/deny verification. An unowned service or stale plan must fail closed. No remote mutation endpoint. Add equivalent platform adapters after Mac acceptance.
+- [ ] AUTHZ-06 — Verify configuration preservation, rollback on failed restart, permission persistence and fresh denied-path/old-session tests on the installed build. Keep automated fixture results distinct from physical user acceptance. Project migration remains blocked on the actual authorization workflow.
+
 ## 2026-11-23 — Codas-Router and Mac release
 
 - [x] Unify current repository, package, display and release-artifact naming as Codas / Codas-Router / Codas-mac, retaining required installation/protocol compatibility identifiers.

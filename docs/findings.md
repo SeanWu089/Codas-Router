@@ -1,5 +1,11 @@
 # Findings
 
+## 2026-11-27 — Local workspace-policy development checkpoint
+
+- DevSpace documents startup-loaded configuration, including `workspaces.allowedRoots`: a running server does not hot-reload it. An empty root list falls back to its working directory. See https://devspace.run/docs/reference/configuration/ and upstream issue Waishnav/devspace#364. The local directory-management design therefore requires an explicit reviewed configuration change, controlled backend restart, rollback, and fresh end-to-end authorization verification. Do not advertise a saved configuration as active authorization.
+- Added an isolated local root-policy primitive with canonical-directory identity, protected-location exclusion, opaque revocable leases, state export/restore without restoring leases, and a read-only DevSpace root-change planner with stale-plan checks. Root/lease checks are preflights, not OS confinement; a same-account shell can still operate outside the workspace under the existing trust model (see the earlier execution-boundary finding and SECURITY.md).
+- The new primitive is intentionally not wired into the live Router, peer execution, DevSpace configuration writer, or Mac menu yet. Its fixture tests do not establish production enforcement or cross-platform physical acceptance. No live configuration, service, or directory grant was changed.
+
 ## 2026-11-23 — Codas naming and Mac 0.3.12
 
 - The project is Codas-Router, the product is Codas and the menu component is Codas-mac. Existing protocol, credential-directory and service identities remain compatible; a branding change must not create a second installation identity or discard pairing.
