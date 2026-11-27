@@ -3,7 +3,7 @@ import SwiftUI
 
 /// AppKit owns the outer size; page content only determines the scroll extent.
 enum DevicePanelLayout {
-    static let preferredSize = NSSize(width: 350, height: 540)
+    static let preferredSize = NSSize(width: 354, height: 620)
 
     static func size(in visibleFrame: NSRect) -> NSSize {
         NSSize(width: min(preferredSize.width, max(1, visibleFrame.width - 24)),

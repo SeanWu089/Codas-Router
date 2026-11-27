@@ -220,3 +220,12 @@ real deployment identities and addresses in accordance with `SECURITY.md`.
 - [ ] AND-UI-01: Verify integrated Preview.9 visual state, fresh remote info, switch-off and reconnect on the actual phone. Earlier physical info and installation evidence remains valid, not an extended stability guarantee.
 - [ ] AND-UI-02: Verify user-mediated system permission and APK confirmation flows on the actual phone.
 - [ ] AND-05 / AND-07: Extended network-switch and background reliability remain separate physical acceptance checks.
+
+## 2026-11-26 — Native macOS menu popover 0.3.13 / build 17
+- [x] Automated: native typecheck; device-client, layout and menu status-dot regressions; eight installer fault-injection checks; launcher regression; signed candidate and installer preflight.
+- [x] Installed with guarded rollback backup; local Router and DevSpace listener PIDs unchanged, both health checks passed.
+- [ ] MAC-UI-01 — User confirms the actual menu-bar appearance, click-away dismissal, online/offline rows, usage detail and scrolling.
+- [ ] MAC-UI-02 — User confirms local settings and Add device guidance; actual re-enrollment is not yet verified. Secure revocation and identity-preserving re-enrollment require Router protocol support and are not implemented by this UI-only release.
+- [ ] MAC-UI-03 — Reboot/login and sustained remote execution acceptance remain separate.
+- [x] Recover the 0.3.13 source patch in an isolated clean checkout; include the provider-neutral health regression and align CI packaging with 0.3.13. Node and native Mac regression suites, signed build and source-only installer preflight passed.
+- [ ] Integrate the recovered source checkpoint into the authoritative checkout and publish through the reviewed Git workflow. Preserve unrelated dirty changes and the original patch until recovery is verified. No backend deployment required.

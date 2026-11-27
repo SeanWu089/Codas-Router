@@ -62,5 +62,5 @@ jobs:
 
       - name: Verify portable installer without installing
         run: |
-          python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.12.zip --output dist/Codas-mac-0.3.12-installer
-          zsh dist/Codas-mac-0.3.12-installer/Install-Codas-mac.command --plan
+          python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.13.zip --output dist/Codas-mac-0.3.13-installer
+          zsh dist/Codas-mac-0.3.13-installer/Install-Codas-mac.command --plan

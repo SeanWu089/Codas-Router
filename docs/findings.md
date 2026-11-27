@@ -193,3 +193,10 @@ Reason: ngrok free quota exceeded; Sean purchased example.com and configured Clo
 The integrated Flutter UI reuses the canonical native Agent service and existing Android permission and confirmation boundaries. Preview.9 uses versionCode 10; the higher-version native recovery artifact is separate. The merge retains the Mac 0.3.12 UI and both platform regression suites. Intermittent network timeouts and extended physical-device acceptance remain open. No production deployment is part of source integration.
 
 Local integration verification: 84 Node tests, 26 isolated production-helper tests, the Mac regression suite, 23 native protocol checks, stream callback isolation, Flutter analysis and three Flutter tests passed. A fresh release APK built successfully and reported the expected package and versionCode 10. These checks do not establish extended physical-device acceptance.
+
+## 2026-11-26 — macOS popover refresh
+The canonical iCloud checkout still had dataless Git and Swift source files after retry. A fully local isolated checkout of the published integration baseline was used, with the existing local Cloudflare-aware client changes preserved. The UI-only installation does not redeploy the Router. The existing pairing credential is revealed only on explicit local request; no removal or token-revocation API is simulated.
+
+## 2026-11-27 — Recover 0.3.13 source checkpoint
+
+- Restored the saved 0.3.13/build 17 patch against the clean published baseline. Reconciled the provider-neutral health regression and versioned CI packaging paths. Node regression (84 checks), native Mac suite, additional health-config checks, signed archive build and source-only installer plan passed. Rebuilding does not prove binary identity with the previous installation, and no production update was performed during this recovery.

@@ -15,8 +15,8 @@
 
 </div>
 
-> **Current codebase (2026-11-23):** The default branch includes the tested
-> **Device Registry v1**, **Codas-mac v0.3.12** menu-bar app, and Mac-side
+> **Current codebase (2026-11-27):** The default branch includes the tested
+> **Device Registry v1**, **Codas-mac v0.3.13** menu-bar app, and Mac-side
 > workspace routing / wrong-device protections. The Mac component now includes
 > matching device-dot ordering, fixed panel geometry and a verified exact-path
 > login installer. These components were
@@ -378,7 +378,7 @@ MIT.
 
 </div>
 
-## Codas-mac menu bar controller (v0.3.12)
+## Codas-mac menu bar controller (v0.3.13)
 
 **Codas-mac** is the native Swift/AppKit menu component, installed at
 `~/Applications/Codas-mac.app`. It keeps the existing blue Finder icon and the
@@ -390,7 +390,7 @@ release cycles.
 - Remote-device dots and tooltip numbers follow the **Other Devices** row
   order. Connected devices are green; offline, unknown and stale states are
   grey. The local Mac is not counted as another remote dot.
-- The panel uses a stable 350 × 540 point layout, reduced when needed to fit
+- The panel uses a stable 354 × 620 point layout, reduced when needed to fit
   the active screen. Headers, Back and the footer stay outside scrolling
   content, and navigation resets the content scroll position.
 - The menu closes on outside clicks or app deactivation while preserving
@@ -402,7 +402,9 @@ release cycles.
   reported separately and do not undo a working installation. Rollback
   preserves whole directories instead of deleting and extracting over them.
 
-The user accepted the installed 0.3.12 interface. Automated checks cover
+The 0.3.13 native popover includes device details, settings and enrollment
+guidance; it does not implement secure device revocation. The public health
+probe uses provider-neutral local configuration. Automated checks cover
 ordering, freshness, scrolling, layout and installer failure recovery.
 Physical reboot acceptance remains a separate check; a successful source
 build alone does not establish that result.
@@ -418,11 +420,11 @@ npm run test:mac
 zsh scripts/mac/menu-app/build.sh
 ```
 
-The build produces `dist/Codas-mac-0.3.12.zip`. It stages the app without
+The build produces `dist/Codas-mac-0.3.13.zip`. It stages the app without
 installing it. Inspect a candidate-only installation plan with:
 
 ```sh
-python3 scripts/mac/menu-app/install-menu.py --source dist/Codas-mac-0.3.12.zip --plan
+python3 scripts/mac/menu-app/install-menu.py --source dist/Codas-mac-0.3.13.zip --plan
 ```
 
 To install from a locally authorized terminal, replace `--plan` with `--apply`.
@@ -434,7 +436,7 @@ reuse. Installing the menu component does not restart Router or DevSpace.
 For a transferable installer folder:
 
 ```sh
-python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.12.zip --output dist/Codas-mac-0.3.12-installer
+python3 scripts/mac/menu-app/package-release.py --source dist/Codas-mac-0.3.13.zip --output dist/Codas-mac-0.3.13-installer
 ```
 
 The folder contains the signed app ZIP, the installer, its double-clickable

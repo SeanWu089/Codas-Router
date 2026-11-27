@@ -1,5 +1,12 @@
 # Changelog
 
+## Codas-mac 0.3.13 / build 17 — 2026-11-26
+
+- Refresh the native menu popover and add local settings and enrollment guidance.
+- Preserve the existing enrollment credential and reveal it only on explicit local action; secure revocation remains unimplemented.
+- Use a provider-neutral, locally configured HTTPS health probe.
+- Restore the installed release's source baseline and align the CI installer check with the versioned archive. No Router deployment is required.
+
 ## Codas-Router naming and Codas-mac 0.3.12 — 2026-11-23
 
 - Unify the public project, package, interface and new build-artifact names
