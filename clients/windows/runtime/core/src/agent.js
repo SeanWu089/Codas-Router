@@ -1,0 +1,396 @@
+import os from "node:os";
+import process from "node:process";
+import { pathToFileURL } from "node:url";
+import { AgentConfigStore } from "./agent-config.js";
+import { DevSpaceLocalOAuth } from "./devspace-local-auth.js";
+import { consumeAgentEvents, nextSseFailureCount, reconnectDelayMs, SseUnavailableError } from "./agent-sse.js";
+import { AGENT_SSE_HEARTBEAT_INTERVAL_MS } from "./agent-timing.js";
+import { normalizeCoreDevice } from "./device-display.js";
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function cleanRouterUrl(value) {
+  const url = new URL(value);
+  url.pathname = url.pathname.replace(/\/$/, "");
+  url.search = "";
+  url.hash = "";
+  return url.href.replace(/\/$/, "");
+}
+
+function parseArgs(argv) {
+  const [command, ...rest] = argv;
+  const options = {};
+  for (let index = 0; index < rest.length; index += 1) {
+    const item = rest[index];
+    if (!item.startsWith("--")) continue;
+    const key = item.slice(2);
+    const value = rest[index + 1];
+    if (value === undefined || value.startsWith("--")) {
+      options[key] = true;
+    } else {
+      options[key] = value;
+      index += 1;
+    }
+  }
+  return { command, options };
+}
+
+function splitRoots(value) {
+  if (!value) return [];
+  return String(value)
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+async function routerJson(url, { token, method = "POST", body, timeoutMs = 35_000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      method,
+      redirect: "error",
+      headers: {
+        authorization: `Bearer ${token}`,
+        ...(body ? { "content-type": "application/json" } : {})
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal
+    });
+    const text = await response.text();
+    const parsed = text ? JSON.parse(text) : {};
+    if (!response.ok) {
+      throw Object.assign(new Error(parsed.message || parsed.error || `HTTP ${response.status}`), { status: response.status });
+    }
+    return parsed;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function enrollAgent({
+  routerUrl,
+  pairingToken,
+  deviceId = os.hostname(),
+  installationId,
+  label = os.hostname(),
+  roots = [],
+  devspaceBaseUrl = "http://127.0.0.1:7676",
+  configStore = new AgentConfigStore()
+}) {
+  const base = cleanRouterUrl(routerUrl);
+  const result = await routerJson(`${base}/_codassol/agent/enroll`, {
+    token: pairingToken,
+    body: {
+      id: deviceId,
+      ...(installationId ? { installationId } : {}),
+      label,
+      platform: process.platform,
+      roots,
+      capabilities: ["devspace-http"]
+    }
+  });
+  if (typeof result.agentToken !== "string") {
+    throw new Error("Router enrollment returned no Agent token");
+  }
+  return configStore.save({
+    routerUrl: base,
+    device: {
+      id: deviceId,
+      label,
+      platform: process.platform,
+      roots,
+      capabilities: ["devspace-http"]
+    },
+    agentToken: result.agentToken,
+    devspace: {
+      baseUrl: devspaceBaseUrl,
+      oauth: {}
+    }
+  });
+}
+
+function forwardedHeaders(headers = {}) {
+  const result = {};
+  const blocked = new Set([
+    "authorization",
+    "host",
+    "connection",
+    "content-length",
+    "transfer-encoding"
+  ]);
+  for (const [key, value] of Object.entries(headers)) {
+    if (!blocked.has(key.toLowerCase()) && value !== undefined) {
+      result[key] = String(value);
+    }
+  }
+  return result;
+}
+
+async function executeHttpJob(configStore, config, payload) {
+  if (payload?.type !== "devspace-http") {
+    throw Object.assign(new Error("Unsupported Agent job type"), {
+      code: "UNSUPPORTED_JOB_TYPE"
+    });
+  }
+  const oauth = new DevSpaceLocalOAuth({
+    baseUrl: config.devspace.baseUrl,
+    oauthState: config.devspace.oauth || {},
+    saveOAuthState: async (oauthState) => {
+      config.devspace.oauth = oauthState;
+      await configStore.save(config);
+    }
+  });
+  const request = payload.request || {};
+  const response = await oauth.authorizedFetch(request.path || "/mcp", {
+    method: request.method || "POST",
+    redirect: "error",
+    headers: forwardedHeaders(request.headers),
+    body: request.bodyBase64
+      ? Buffer.from(request.bodyBase64, "base64")
+      : undefined
+  });
+  const body = Buffer.from(await response.arrayBuffer());
+  return {
+    statusCode: response.status,
+    headers: Object.fromEntries(response.headers.entries()),
+    bodyBase64: body.toString("base64")
+  };
+}
+
+export function isExpiredAgentJob(job, now = Date.now()) {
+  // Legacy v0.1/v0.2 Routers did not send a deadline. Retain compatibility
+  // during rolling upgrades; new Routers always attach expiresAt.
+  return job && Object.hasOwn(job, "expiresAt") &&
+    (!Number.isSafeInteger(job.expiresAt) || now >= job.expiresAt);
+}
+
+export async function runAgent({
+  configStore = new AgentConfigStore(),
+  stopSignal = () => false,
+  replicaReceiver = null,
+  onSessionState = () => {},
+  authorizeJob = null,
+  sleepFn = sleep,
+  transport = process.env.CODASSOL_AGENT_TRANSPORT === "poll" ? "poll" : "sse"
+} = {}) {
+  const config = await configStore.load();
+  const status = (value, coreDevice = null) => { try { onSessionState(value, coreDevice); } catch {} };
+  let streamId;
+  let generation = 0;
+  const completedJobs = new Set();
+  const heartbeat = (id = streamId) => routerJson(`${config.routerUrl}/_codassol/agent/heartbeat`, {
+    token: config.agentToken,
+    body: {
+      ...(id ? { streamId: id } : {}),
+      roots: config.device.roots,
+      capabilities: config.device.capabilities
+    },
+    timeoutMs: 10_000
+  });
+  const reportJob = async (job) => {
+    if (stopSignal() || completedJobs.has(job.id) || isExpiredAgentJob(job)) {
+      // The Router has already rejected the caller's request, so there is
+      // nothing to acknowledge. Never run a late file mutation or command.
+      process.stderr.write("CodasSol Agent discarded expired job before execution\n");
+      return;
+    }
+    completedJobs.add(job.id);
+    if (completedJobs.size > 4096) completedJobs.delete(completedJobs.values().next().value);
+    let body;
+    try {
+      let result;
+      if (authorizeJob && !(await authorizeJob(job))) {
+        throw Object.assign(new Error("Local operator declined or approval expired"), { code: "LOCAL_APPROVAL_REQUIRED" });
+      }
+      if (stopSignal() || isExpiredAgentJob(job)) return;
+      if (job.payload?.type === "auth-replica-checkpoint" ||
+          job.payload?.type === "auth-replica-commit") {
+        const commit = job.payload.type === "auth-replica-commit";
+        const handler = commit ? replicaReceiver?.commit : replicaReceiver?.receive;
+        if (typeof handler !== "function") {
+          throw Object.assign(new Error("Replica receiver not configured"), {
+            code: "AUTH_REPLICA_DISABLED"
+          });
+        }
+        // Replica jobs can never be forwarded to the local DevSpace. The
+        // receiver pins signer, recipient, installation and ordered state.
+        result = await handler.call(replicaReceiver,
+          commit ? job.payload.certificate : job.payload.checkpoint);
+      } else {
+        result = await executeHttpJob(configStore, config, job.payload);
+      }
+      body = { jobId: job.id, ok: true, result };
+    } catch (error) {
+      body = {
+        jobId: job.id,
+        ok: false,
+        error: {
+          code: error?.code || "AGENT_JOB_FAILED",
+          message: error instanceof Error ? error.message : String(error)
+        }
+      };
+    }
+    if (stopSignal() || isExpiredAgentJob(job)) return;
+    await routerJson(`${config.routerUrl}/_codassol/agent/result`, {
+      token: config.agentToken, body, timeoutMs: 10_000
+    });
+    // An authenticated result POST already refreshes Router presence.
+    heartbeatAt = Date.now() + positiveHeartbeatIntervalMs;
+    sseFailures = 0;
+    connectionFailures = 0;
+  };
+  const logError = (error) => process.stderr.write(
+    `CodasSol Agent connection error: ${error instanceof Error ? error.message : String(error)}\n`
+  );
+  // 60-second HTTP heartbeats would cost 43,200 requests per 30-day month
+  // PER device. Keep one-way SSE framing cheap and positively confirm
+  // Agent liveness at a quota-friendly interval instead.
+  let positiveHeartbeatIntervalMs = AGENT_SSE_HEARTBEAT_INTERVAL_MS;
+  let heartbeatAt = 0;
+  let sseFailures = 0;
+  let sseUnavailable = transport === "poll";
+  let connectionFailures = 0;
+
+  while (!stopSignal()) {
+    try {
+      if (sseUnavailable && Date.now() >= heartbeatAt) {
+        await heartbeat();
+        // Legacy explicit polling only; SSE registration needs no extra POST.
+        heartbeatAt = Date.now() + positiveHeartbeatIntervalMs;
+      }
+
+      if (!sseUnavailable) {
+        status("connecting");
+        const controller = new AbortController();
+        const epoch = ++generation;
+        const stopTimer = setInterval(() => {
+          if (stopSignal()) controller.abort();
+        }, 1_000);
+        stopTimer.unref?.();
+        let heartbeatInFlight = false;
+        const heartbeatTimer = setInterval(async () => {
+          if (controller.signal.aborted || heartbeatInFlight || Date.now() < heartbeatAt) return;
+          heartbeatInFlight = true;
+          try {
+            await heartbeat(streamId);
+            if (epoch !== generation || controller.signal.aborted) return;
+            sseFailures = 0;
+            connectionFailures = 0;
+            heartbeatAt = Date.now() + positiveHeartbeatIntervalMs;
+          } catch (error) {
+            if (epoch !== generation || controller.signal.aborted) return;
+            if (streamId) { controller.abort(error); return; }
+            if ([401, 403, 409].includes(error.status)) {
+              controller.abort(error);
+              return;
+            }
+            heartbeatAt = Date.now() + 5 * 60_000;
+            logError(error);
+          } finally {
+            heartbeatInFlight = false;
+          }
+        }, 5_000);
+        heartbeatTimer.unref?.();
+        let readyAt = null;
+        try {
+          await consumeAgentEvents({
+            url: `${config.routerUrl}/_codassol/agent/events`,
+            token: config.agentToken,
+            signal: controller.signal,
+            previousStreamId: streamId,
+            onReady: (ready) => {
+              if (epoch !== generation || controller.signal.aborted) return;
+              if (ready?.deviceId !== config.device.id || ready?.protocol !== 1) {
+                throw new Error("Invalid authenticated SSE ready event");
+              }
+              streamId = ready.streamId;
+              status("connected", normalizeCoreDevice(ready.coreDevice));
+              positiveHeartbeatIntervalMs = streamId ? 20_000 : AGENT_SSE_HEARTBEAT_INTERVAL_MS;
+              readyAt = Date.now();
+              heartbeatAt = Date.now() + positiveHeartbeatIntervalMs;
+              connectionFailures = 0;
+            },
+            onJob: reportJob
+          });
+          if (stopSignal()) break;
+          throw new Error("SSE connection ended unexpectedly");
+        } catch (error) {
+          if (stopSignal()) break;
+          status("reconnecting");
+          if ([401, 403].includes(controller.signal.reason?.status)) throw controller.signal.reason;
+          if (controller.signal.reason?.status === 409) error = new Error("Stream lease expired; reconnecting");
+          if (error instanceof SseUnavailableError) {
+            // An unsupported endpoint must not silently become paid polling.
+            throw error;
+          } else {
+            if ([401, 403, 409].includes(error.status)) throw error;
+            logError(error);
+            sseFailures = nextSseFailureCount(sseFailures, {
+              readyAt, disconnectedAt: Date.now()
+            });
+            // Repeated stream failures back off; never add a polling request.
+            controller.abort();
+            await sleepFn(reconnectDelayMs(sseFailures));
+          }
+          continue;
+        } finally {
+          controller.abort();
+          clearInterval(stopTimer);
+          clearInterval(heartbeatTimer);
+        }
+      }
+
+      const polled = await routerJson(`${config.routerUrl}/_codassol/agent/poll`, {
+        token: config.agentToken,
+        body: {},
+        timeoutMs: 32_000
+      });
+      if (!polled.job) continue;
+      await reportJob(polled.job);
+    } catch (error) {
+      if (error instanceof SseUnavailableError || [401, 403, 409].includes(error.status)) throw error;
+      status("reconnecting");
+      logError(error);
+      await sleepFn(reconnectDelayMs(++connectionFailures));
+    }
+  }
+  status("stopped");
+}
+
+function usage() {
+  return [
+    "CodasSol Agent",
+    "",
+    "Enroll:",
+    "  node src/agent.js enroll --router <url> --pairing-token <token> [--device-id <id>] [--label <label>] [--roots <root1|root2>]",
+    "",
+    "Run:",
+    "  node src/agent.js run"
+  ].join("\n");
+}
+
+const isMain = process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url;
+if (isMain) {
+  const { command, options } = parseArgs(process.argv.slice(2));
+  if (command === "enroll") {
+    if (!options.router || !options["pairing-token"]) {
+      throw new Error(usage());
+    }
+    await enrollAgent({
+      routerUrl: options.router,
+      pairingToken: options["pairing-token"],
+      deviceId: options["device-id"] || os.hostname(),
+      label: options.label || os.hostname(),
+      roots: splitRoots(options.roots),
+      devspaceBaseUrl: options["devspace-url"] || "http://127.0.0.1:7676"
+    });
+    console.log("CodasSol Agent enrolled. Pairing token was not stored.");
+  } else if (command === "run") {
+    await runAgent();
+  } else {
+    console.log(usage());
+  }
+}

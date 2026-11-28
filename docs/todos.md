@@ -229,3 +229,10 @@ real deployment identities and addresses in accordance with `SECURITY.md`.
 - [ ] MAC-UI-03 — Reboot/login and sustained remote execution acceptance remain separate.
 - [x] Recover the 0.3.13 source patch in an isolated clean checkout; include the provider-neutral health regression and align CI packaging with 0.3.13. Node and native Mac regression suites, signed build and source-only installer preflight passed.
 - [ ] Integrate the recovered source checkpoint into the authoritative checkout and publish through the reviewed Git workflow. Preserve unrelated dirty changes and the original patch until recovery is verified. No backend deployment required.
+
+## Windows RC8 public Core candidate — 2026-11-28
+
+- [x] Replace hardcoded Core origin with user-selected HTTPS DNS origin and per-origin credential binding. Local Flutter analyze, 24 Flutter tests and 13 runtime tests passed; previous private hostname absent from source.
+- [ ] Verify public Windows CI, checksum and installer before prerelease.
+- [ ] Fresh physical PC pairing, RC7 upgrade, reconnect and stop tests. Separate explicit Core re-enrollment flow not implemented.
+- [ ] Review candidate into develop and promote to main only after acceptance.

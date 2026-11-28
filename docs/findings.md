@@ -200,3 +200,7 @@ The canonical iCloud checkout still had dataless Git and Swift source files afte
 ## 2026-11-27 — Recover 0.3.13 source checkpoint
 
 - Restored the saved 0.3.13/build 17 patch against the clean published baseline. Reconciled the provider-neutral health regression and versioned CI packaging paths. Node regression (84 checks), native Mac suite, additional health-config checks, signed archive build and source-only installer plan passed. Rebuilding does not prove binary identity with the previous installation, and no production update was performed during this recovery.
+
+## 2026-11-28 — Windows public origin separation
+
+RC8 replaces the personal ingress in Dart and runtime policy with a user-entered HTTPS DNS origin, pinned per session to stored pairing credentials. Old private history and archives are excluded. Existing paired devices stay bound to their original origin. Public release remains a candidate until physical acceptance.

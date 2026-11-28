@@ -1,0 +1,355 @@
+name: Build Codas Windows RC8 configurable origin candidate
+on:
+  push:
+    branches: [candidate/windows-0.2.0-rc8-configurable-origin]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend-vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # Only the pinned upstream dependencies are shipped, not the legacy router.
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: SeanWu089/Codas-Router
+          ref: a9c8e888b3c82491e892b7d428f05660ae4717e4
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v7.0.1
+        with:
+          path: lite-build
+          persist-credentials: false
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22.23.3'
+          package-manager-cache: false
+      - name: Assemble exact pinned offline upstream dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = a9c8e888b3c82491e892b7d428f05660ae4717e4
+          node scripts/windows/stable/restore-frozen-source.mjs
+          node scripts/windows/stable/build-package.mjs --prepare-dependencies --official-only --cache "$RUNNER_TEMP/codas-archives"
+          node scripts/windows/stable/build-package.mjs --candidate --unpacked --offline --version windows-0.2.0-rc.5-c1497ca --cache "$RUNNER_TEMP/codas-archives" --output "$RUNNER_TEMP/old-assembly"
+          test -f "$RUNNER_TEMP/old-assembly/payload/devspace/node_modules/@waishnav/devspace/dist/cli.js"
+          mkdir "$RUNNER_TEMP/backend-vendor"
+          python3 lite-build/scripts/windows/agent-ci/prune.py "$RUNNER_TEMP/old-assembly/payload/devspace" "$RUNNER_TEMP/lite/devspace"
+          tar -C "$RUNNER_TEMP/lite" -czf "$RUNNER_TEMP/backend-vendor/backend.tar.gz" devspace
+          ls -lh "$RUNNER_TEMP/backend-vendor/backend.tar.gz"
+          cd "$RUNNER_TEMP/backend-vendor"
+          sha256sum backend.tar.gz > backend.sha256
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: codas-workspace-lite-win-x64
+          path: ${{ runner.temp }}/backend-vendor/
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
+  backend-preflight:
+    name: REQUIRED — Windows runtime and file-operation preflight
+    needs: backend-vendor
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7.0.1
+        with:
+          repository: SeanWu089/Codas-Router
+          ref: 29002b7f2cb2dcdc4cb9b5c4fbc7a1664b275930
+          path: router-contract-source
+          persist-credentials: false
+      - name: Verify pinned Router checkout
+        shell: pwsh
+        run: |
+          if ((git -C router-contract-source rev-parse HEAD) -ne '29002b7f2cb2dcdc4cb9b5c4fbc7a1664b275930') { throw 'Router source mismatch' }
+          "CODAS_ROUTER_TEST_SOURCE=$((Resolve-Path router-contract-source).Path)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Verify public source snapshot
+        shell: pwsh
+        run: |
+          python scripts/windows/agent-ci/audit-public-source.py clients/windows
+          if ($LASTEXITCODE -ne 0) { throw 'Public source privacy check failed' }
+      - name: Prepare verified official Node distribution
+        shell: pwsh
+        run: |
+          $version = 'v22.23.3'
+          $name = "node-$version-win-x64.zip"
+          $base = "https://nodejs.org/dist/$version"
+          $target = Join-Path $env:RUNNER_TEMP 'codas-node'
+          New-Item -ItemType Directory $target | Out-Null
+          $zip = Join-Path $target $name
+          Invoke-WebRequest "$base/$name" -OutFile $zip
+          $checksums = (Invoke-WebRequest "$base/SHASUMS256.txt").Content
+          $line = @($checksums -split "`n" | Where-Object { $_.Trim().EndsWith("  $name") })
+          if ($line.Count -ne 1) { throw 'Official checksum missing' }
+          $expected = ($line[0].Trim() -split '\s+')[0]
+          if ($expected -ne '2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71' -or (Get-FileHash $zip -Algorithm SHA256).Hash -ne $expected) { throw 'Node SHA256 mismatch' }
+          Expand-Archive -LiteralPath $zip -DestinationPath $target
+          $homeDir = Join-Path $target "node-$version-win-x64"
+          if ((& (Join-Path $homeDir 'node.exe') --version) -ne $version) { throw 'Node version mismatch' }
+          "CODAS_NODE_HOME=$homeDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          name: codas-workspace-lite-win-x64
+          path: ${{ runner.temp }}/backend-download
+      - name: Verify vendor transfer and extract only the bundled backend
+        shell: pwsh
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP 'backend-download'
+          $expected = ((Get-Content (Join-Path $download 'backend.sha256') -Raw).Trim() -split '\s+')[0]
+          $archive = Join-Path $download 'backend.tar.gz'
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $expected) { throw 'Vendor transfer checksum mismatch' }
+          $vendor = Join-Path $env:RUNNER_TEMP 'codas-vendor'
+          New-Item -ItemType Directory $vendor | Out-Null
+          & tar.exe -xzf $archive -C $vendor
+          if ($LASTEXITCODE -ne 0) { throw 'Vendor extraction failed' }
+          "CODAS_BACKEND_VENDOR=$vendor" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Run real bundled runtime from two arbitrary paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = Join-Path $PWD 'clients/windows\runtime'
+          $base = Join-Path $env:RUNNER_TEMP ('cw-' + [guid]::NewGuid().ToString('N').Substring(0,8))
+          New-Item -ItemType Directory $base | Out-Null
+          $runtime = Join-Path $base 'portable runtime'
+          New-Item -ItemType Directory $runtime | Out-Null
+          foreach ($name in @('managed-backend.mjs','backend-preload.mjs','session-generations.mjs','installed-smoke.mjs','desktop-policy.mjs','core','test')) {
+            Copy-Item -LiteralPath (Join-Path $source $name) -Destination $runtime -Recurse
+          }
+          Copy-Item -LiteralPath 'scripts/windows/agent-ci/remote-contract.mjs' -Destination $runtime
+          Copy-Item -LiteralPath 'scripts/windows/agent-ci/router-contract.mjs' -Destination $runtime
+          Copy-Item -LiteralPath 'scripts/windows/agent-ci/command-poll.mjs' -Destination $runtime
+          Copy-Item -LiteralPath 'scripts/windows/agent-ci/command-poll.test.mjs' -Destination $runtime
+          Copy-Item -LiteralPath (Join-Path $env:CODAS_NODE_HOME 'node.exe') -Destination $runtime
+          Move-Item -LiteralPath (Join-Path $env:CODAS_BACKEND_VENDOR 'devspace') -Destination (Join-Path $runtime 'devspace')
+          $originalPath = $env:Path
+          $originalTemp = $env:TEMP
+          $originalTmp = $env:TMP
+          try {
+            $env:Path = "$env:SystemRoot\System32;$env:SystemRoot"
+            Remove-Item Env:NODE_OPTIONS,Env:NODE_PATH,Env:DEVSPACE_CONFIG_DIR,Env:DEVSPACE_OAUTH_OWNER_TOKEN,Env:CODASSOL_DEVSPACE_AUTH_FILE -ErrorAction SilentlyContinue
+            $env:CODAS_BACKEND_CI_DIAGNOSTICS = '1'
+            foreach ($label in @('first','relocated')) {
+              if ($label -eq 'relocated') {
+                $newRuntime = Join-Path $base '中文 路径'
+                Move-Item -LiteralPath $runtime -Destination $newRuntime
+                $runtime = $newRuntime
+              }
+              $temp = Join-Path $base ('测试 temp ' + $label)
+              New-Item -ItemType Directory $temp | Out-Null
+              $env:TEMP = $temp
+              $env:TMP = $temp
+              Write-Host "Runtime path case: $label"
+              & (Join-Path $runtime 'node.exe') --test (Join-Path $runtime 'command-poll.test.mjs')
+              if ($LASTEXITCODE -ne 0) { throw "Process output collector regression failed: $label" }
+              & (Join-Path $runtime 'node.exe') --test (Join-Path $runtime 'test/policy.test.mjs')
+              if ($LASTEXITCODE -ne 0) { throw "Session authorization policy failed: $label" }
+              & (Join-Path $runtime 'node.exe') --test (Join-Path $runtime 'test/session.test.mjs')
+              if ($LASTEXITCODE -ne 0) { throw "Core display/session compatibility failed: $label" }
+              & (Join-Path $runtime 'node.exe') --check (Join-Path $runtime 'installed-smoke.mjs')
+              if ($LASTEXITCODE -ne 0) { throw "Smoke syntax invalid: $label" }
+              & (Join-Path $runtime 'node.exe') (Join-Path $runtime 'installed-smoke.mjs')
+              if ($LASTEXITCODE -ne 0) { throw "Windows runtime preflight failed: $label. Installation build blocked." }
+              & (Join-Path $runtime 'node.exe') --check (Join-Path $runtime 'remote-contract.mjs')
+              if ($LASTEXITCODE -ne 0) { throw "Remote contract syntax invalid: $label" }
+              & (Join-Path $runtime 'node.exe') (Join-Path $runtime 'remote-contract.mjs')
+              if ($LASTEXITCODE -ne 0) { throw "Agent SSE/MCP contract failed: $label. Installation build blocked." }
+              & (Join-Path $runtime 'node.exe') --check (Join-Path $runtime 'router-contract.mjs')
+              if ($LASTEXITCODE -ne 0) { throw "Router contract syntax invalid: $label" }
+              & (Join-Path $runtime 'node.exe') (Join-Path $runtime 'router-contract.mjs')
+              if ($LASTEXITCODE -ne 0) { throw "Router/Agent/Lite contract failed: $label. Installation build blocked." }
+            }
+          } finally {
+            $env:Path = $originalPath
+            $env:TEMP = $originalTemp
+            $env:TMP = $originalTmp
+          }
+          Write-Host 'Runtime, fixture transport and pinned Router integration passed. Public Cloudflare and real operator acceptance remain separate.'
+  windows-agent:
+    if: github.ref_name == 'candidate/windows-0.2.0-rc8-configurable-origin'
+    name: Compile installer only after preflight passes
+    needs: [backend-vendor, backend-preflight]
+    runs-on: windows-2025
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Verify public source snapshot
+        shell: pwsh
+        run: |
+          python scripts/windows/agent-ci/audit-public-source.py clients/windows
+          if ($LASTEXITCODE -ne 0) { throw 'Public source privacy check failed' }
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: false
+      - name: Prepare verified official Node distribution
+        shell: pwsh
+        run: |
+          $version = 'v22.23.3'
+          $name = "node-$version-win-x64.zip"
+          $base = "https://nodejs.org/dist/$version"
+          $target = Join-Path $env:RUNNER_TEMP 'codas-node'
+          New-Item -ItemType Directory $target | Out-Null
+          $zip = Join-Path $target $name
+          Invoke-WebRequest "$base/$name" -OutFile $zip
+          $checksums = (Invoke-WebRequest "$base/SHASUMS256.txt").Content
+          $line = @($checksums -split "`n" | Where-Object { $_.Trim().EndsWith("  $name") })
+          if ($line.Count -ne 1) { throw 'Official checksum missing' }
+          $expected = ($line[0].Trim() -split '\s+')[0]
+          if ($expected -ne '2b0ff57b049cda1bbcea2240eec20467018713c1efe1f7360c2681859b90ed71' -or (Get-FileHash $zip -Algorithm SHA256).Hash -ne $expected) { throw 'Node SHA256 mismatch' }
+          Expand-Archive -LiteralPath $zip -DestinationPath $target
+          $homeDir = Join-Path $target "node-$version-win-x64"
+          if ((& (Join-Path $homeDir 'node.exe') --version) -ne $version) { throw 'Node version mismatch' }
+          "CODAS_NODE_HOME=$homeDir" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          name: codas-workspace-lite-win-x64
+          path: ${{ runner.temp }}/backend-download
+      - name: Verify vendor transfer and extract only the bundled backend
+        shell: pwsh
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP 'backend-download'
+          $expected = ((Get-Content (Join-Path $download 'backend.sha256') -Raw).Trim() -split '\s+')[0]
+          $archive = Join-Path $download 'backend.tar.gz'
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash -ne $expected) { throw 'Vendor transfer checksum mismatch' }
+          $vendor = Join-Path $env:RUNNER_TEMP 'codas-vendor'
+          New-Item -ItemType Directory $vendor | Out-Null
+          & tar.exe -xzf $archive -C $vendor
+          if ($LASTEXITCODE -ne 0) { throw 'Vendor extraction failed' }
+          "CODAS_BACKEND_VENDOR=$vendor" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Verify Windows toolchain
+        shell: pwsh
+        run: |
+          flutter --version
+          flutter config --enable-windows-desktop
+          $innoHome = Join-Path $env:RUNNER_TEMP 'inno7'
+          $installer = Join-Path $env:RUNNER_TEMP 'innosetup-7.1.1-x64.exe'
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_1/innosetup-7.1.1-x64.exe' -OutFile $installer
+          if ((Get-FileHash $installer -Algorithm SHA256).Hash -ne '8a5a6711c3766a6e5fb74f280ba0e3551e719ce94538d901fdbd1f8f9920b3f0') { throw 'Inno Setup SHA256 mismatch' }
+          if ((Get-AuthenticodeSignature $installer).Status -ne 'Valid') { throw 'Inno Setup signature invalid' }
+          $p = Start-Process $installer -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR="'+$innoHome+'"')) -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Inno Setup 7 installation failed: $($p.ExitCode)" }
+          $inno = Join-Path $innoHome 'ISCC.exe'
+          if (-not (Test-Path -LiteralPath $inno)) { throw 'Pinned Inno Setup 7 compiler missing' }
+          Write-Host "Pinned compiler $((Get-Item $inno).VersionInfo.FileVersion)"
+          "CODAS_ISCC=$inno" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Build and test Windows Agent
+        shell: pwsh
+        working-directory: clients/windows
+        run: |
+          & .\windows\packaging\build-agent.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Packaging failed' }
+      - name: Verify installer and brand icon
+        shell: pwsh
+        working-directory: clients/windows
+        run: |
+          $exe = 'dist/Codas-Windows-Agent-0.2.0-rc.8-x64-Setup.exe'
+          if (-not (Test-Path $exe)) { throw 'Installer missing' }
+          if ((Get-Item $exe).Length -lt 1000000) { throw 'Installer unexpectedly small' }
+          Get-FileHash $exe -Algorithm SHA256
+          Get-AuthenticodeSignature $exe | Select-Object Status
+          Add-Type -AssemblyName System.Drawing
+          foreach ($path in @('build/windows/x64/runner/Release/CodasWindowsAgent.exe', $exe)) {
+            $icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Resolve-Path $path).Path)
+            if (-not $icon) { throw "Missing icon: $path" }
+            $bitmap = $icon.ToBitmap()
+            try {
+              $red=0; $dark=0
+              for ($y=0; $y -lt $bitmap.Height; $y++) {
+                for ($x=0; $x -lt $bitmap.Width; $x++) {
+                  $c=$bitmap.GetPixel($x,$y)
+                  if ($c.A -gt 128 -and $c.R -gt 150 -and $c.G -lt 100 -and $c.B -lt 100) { $red++ }
+                  if ($c.A -gt 128 -and $c.R -lt 60 -and $c.G -lt 60 -and $c.B -lt 60) { $dark++ }
+                }
+              }
+              if ($red -lt 2 -or $dark -lt 20) { throw "Codas brand icon not found: $path" }
+              Write-Host "Brand icon verified: $path"
+            } finally { $bitmap.Dispose(); $icon.Dispose() }
+          }
+      - name: Test standard install and uninstall on disposable CI host
+        shell: pwsh
+        working-directory: clients/windows
+        run: |
+          $installer = (Resolve-Path 'dist/Codas-Windows-Agent-0.2.0-rc.8-x64-Setup.exe').Path
+          $dir = Join-Path $env:RUNNER_TEMP 'CodasAgentInstallCheck'
+          $p = Start-Process $installer -ArgumentList @('/VERYSILENT','/NORESTART',('/DIR="'+$dir+'"')) -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Installation returned $($p.ExitCode)" }
+          foreach ($name in @('CodasWindowsAgent.exe','runtime/node.exe','runtime/desktop-worker.mjs','runtime/release-manifest.json','README-Agent.txt','unins000.exe')) {
+            if (-not (Test-Path (Join-Path $dir $name))) { throw "Installed file missing: $name" }
+          }
+          foreach ($name in @('msvcp140.dll','vcruntime140.dll','vcruntime140_1.dll','runtime/managed-backend.mjs','runtime/backend-preload.mjs','runtime/session-generations.mjs','runtime/devspace/node_modules/@waishnav/devspace/dist/cli.js','runtime/devspace/node_modules/better-sqlite3/build/Release/better_sqlite3.node')) {
+            if (-not (Test-Path (Join-Path $dir $name))) { throw "Installed standalone component missing: $name" }
+          }
+          foreach ($name in @('desktop-policy.mjs','desktop-worker.mjs')) {
+            if ((Get-FileHash (Join-Path $dir "runtime/$name")).Hash -ne (Get-FileHash "runtime/$name").Hash) { throw 'Installed policy/source mismatch' }
+          }
+          foreach ($name in @('agent.json','auth.json','profile.json')) {
+            if (Test-Path (Join-Path $dir "runtime/$name")) { throw 'Private runtime state in installer' }
+          }
+          $manifest = Get-Content (Join-Path $dir 'runtime/release-manifest.json') -Raw | ConvertFrom-Json
+          if ($manifest.devspaceBundled -ne $true) { throw 'Standalone backend is not bundled' }
+          if ($manifest.version -ne '0.2.0-rc.8') { throw 'Installer version mismatch' }
+          $prune = Get-Content (Join-Path $dir 'runtime/devspace/codas-prune-manifest.json') -Raw | ConvertFrom-Json
+          if ($prune.name -ne 'Codas Workspace Lite' -or $prune.removed_bytes -lt 300000000) { throw 'Lite runtime missing' }
+          if (Test-Path (Join-Path $dir 'runtime/devspace/node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/claude.exe')) { throw 'Unused embedded Claude CLI was not pruned' }
+          # Run the installed runtime with developer tools removed from PATH.
+          $oldPath = $env:Path
+          $test = Join-Path $dir 'runtime/installed-smoke.mjs'
+          Copy-Item 'runtime/installed-smoke.mjs' $test
+          $contract = Join-Path $dir 'runtime/remote-contract.mjs'
+          Copy-Item '../../scripts/windows/agent-ci/remote-contract.mjs' $contract
+          $pollHelper = Join-Path $dir 'runtime/command-poll.mjs'
+          Copy-Item '../../scripts/windows/agent-ci/command-poll.mjs' $pollHelper
+          try {
+            $env:Path = "$env:SystemRoot\System32;$env:SystemRoot"
+            Remove-Item Env:NODE_OPTIONS,Env:NODE_PATH,Env:DEVSPACE_CONFIG_DIR,Env:DEVSPACE_OAUTH_OWNER_TOKEN,Env:CODASSOL_DEVSPACE_AUTH_FILE -ErrorAction SilentlyContinue
+            $env:CODAS_BACKEND_CI_DIAGNOSTICS = '1'
+            & (Join-Path $dir 'runtime/node.exe') $test
+            if ($LASTEXITCODE -ne 0) { throw 'Installed standalone backend/OAuth/MCP smoke failed' }
+            & (Join-Path $dir 'runtime/node.exe') $contract
+            if ($LASTEXITCODE -ne 0) { throw 'Installed session authorization/Agent MCP contract failed' }
+          } finally {
+            $env:Path = $oldPath
+            Remove-Item -LiteralPath $test,$contract,$pollHelper -Force -ErrorAction SilentlyContinue
+          }
+          $p = Start-Process (Join-Path $dir 'unins000.exe') -ArgumentList @('/VERYSILENT','/NORESTART') -Wait -PassThru
+          if ($p.ExitCode -ne 0 -or (Test-Path (Join-Path $dir 'CodasWindowsAgent.exe'))) { throw 'Uninstallation not verified' }
+          Write-Host 'Installed backend/OAuth/MCP and install/uninstall verified; no public agent connection was initiated.'
+      - name: Upload installer
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: Codas-Windows-Agent-0.2.0-rc.8-x64-Setup
+          path: |
+            clients/windows/dist/Codas-Windows-Agent-0.2.0-rc.8-x64-Setup.exe
+            clients/windows/dist/Codas-Windows-Agent-0.2.0-rc.8-x64-Setup.exe.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  public-prerelease:
+    if: github.repository == 'SeanWu089/Codas-Router' && github.ref_name == 'candidate/windows-0.2.0-rc8-configurable-origin'
+    name: Publish verified Windows candidate to unified Releases
+    needs: windows-agent
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          name: Codas-Windows-Agent-0.2.0-rc.8-x64-Setup
+          path: release-assets
+      - name: Check artifact and publish prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        working-directory: release-assets
+        run: |
+          set -euo pipefail
+          exe=Codas-Windows-Agent-0.2.0-rc.8-x64-Setup.exe
+          sha256sum -c "$exe.sha256"
+          test "$(head -c 2 "$exe")" = MZ
+          gh release create windows-v0.2.0-rc.8 "$exe" "$exe.sha256" --target "$GITHUB_SHA" --prerelease --latest=false --title 'Windows | Codas 0.2.0 RC8' --notes 'Public configurable Core HTTPS origin. No preconfigured personal endpoint. CI runtime, Flutter and installer checks passed; real-device pairing, reconnect and upgrade acceptance pending. Existing RC7 remains available for rollback.'
